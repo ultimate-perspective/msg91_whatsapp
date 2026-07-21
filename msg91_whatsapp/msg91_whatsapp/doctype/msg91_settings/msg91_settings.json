@@ -1,0 +1,105 @@
+{
+ "actions": [],
+ "creation": "2026-07-21 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "enabled",
+  "connection_section",
+  "base_url",
+  "auth_key",
+  "integrated_number",
+  "column_break_conn",
+  "namespace",
+  "default_language",
+  "test_section",
+  "test_to",
+  "test_body"
+ ],
+ "fields": [
+  {
+   "default": "0",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Enabled"
+  },
+  {
+   "fieldname": "connection_section",
+   "fieldtype": "Section Break",
+   "label": "Connection"
+  },
+  {
+   "default": "https://api.msg91.com/api/v5",
+   "fieldname": "base_url",
+   "fieldtype": "Data",
+   "label": "Base URL"
+  },
+  {
+   "fieldname": "auth_key",
+   "fieldtype": "Password",
+   "label": "Auth Key"
+  },
+  {
+   "description": "WhatsApp number registered on MSG91, digits only. e.g. 919924859743",
+   "fieldname": "integrated_number",
+   "fieldtype": "Data",
+   "label": "Integrated Number"
+  },
+  {
+   "fieldname": "column_break_conn",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "namespace",
+   "fieldtype": "Data",
+   "label": "Template Namespace"
+  },
+  {
+   "default": "en",
+   "fieldname": "default_language",
+   "fieldtype": "Data",
+   "label": "Default Template Language"
+  },
+  {
+   "collapsible": 1,
+   "fieldname": "test_section",
+   "fieldtype": "Section Break",
+   "label": "Test (free-form / session)"
+  },
+  {
+   "description": "Recipient number, digits only with country code. Only works inside the 24h session window.",
+   "fieldname": "test_to",
+   "fieldtype": "Data",
+   "label": "Test To"
+  },
+  {
+   "fieldname": "test_body",
+   "fieldtype": "Small Text",
+   "label": "Test Body"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-07-21 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Msg91 Whatsapp",
+ "name": "MSG91 Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

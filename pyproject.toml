@@ -1,0 +1,19 @@
+[project]
+name = "msg91_whatsapp"
+authors = [
+    { name = "Design Instantly", email = "designinstantly@gmail.com" },
+]
+description = "Send WhatsApp messages and run a lead-nudge funnel via MSG91"
+requires-python = ">=3.10"
+readme = "README.md"
+dynamic = ["version"]
+dependencies = [
+    "requests",
+]
+
+[build-system]
+requires = ["flit_core >=3.4,<4"]
+build-backend = "flit_core.buildapi"
+
+[tool.flit.module]
+name = "msg91_whatsapp"
