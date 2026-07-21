@@ -24,8 +24,8 @@ app_license = "MIT"
 # }
 
 # Document events (P2 - map inbound WhatsApp Message -> interacted)
-# doc_events = {
-#     "WhatsApp Message": {
-#         "after_insert": "msg91_whatsapp.funnel.signals.on_whatsapp_message",
-#     }
-# }
+doc_events = {
+    "WhatsApp Message": {
+        "after_insert": "msg91_whatsapp.funnel.signals.on_whatsapp_message",
+    }
+}

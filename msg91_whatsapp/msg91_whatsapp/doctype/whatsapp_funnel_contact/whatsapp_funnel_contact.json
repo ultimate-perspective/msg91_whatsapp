@@ -1,0 +1,139 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:phone",
+ "creation": "2026-07-21 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "phone",
+  "profile_name",
+  "stage",
+  "signals_section",
+  "last_inbound_at",
+  "last_read_at",
+  "last_outbound_at",
+  "session_expires_at",
+  "column_break_signals",
+  "replied",
+  "opted_out",
+  "nudge_count",
+  "last_nudge_at",
+  "content_section",
+  "last_message"
+ ],
+ "fields": [
+  {
+   "fieldname": "phone",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Phone",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "fieldname": "profile_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Profile Name"
+  },
+  {
+   "default": "Outreach Sent",
+   "fieldname": "stage",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Stage",
+   "options": "Outreach Sent\nOutreach Seen\nInteracted\nWarm Lead\nHot Lead"
+  },
+  {
+   "fieldname": "signals_section",
+   "fieldtype": "Section Break",
+   "label": "Signals"
+  },
+  {
+   "fieldname": "last_inbound_at",
+   "fieldtype": "Datetime",
+   "label": "Last Inbound At"
+  },
+  {
+   "fieldname": "last_read_at",
+   "fieldtype": "Datetime",
+   "label": "Last Read At"
+  },
+  {
+   "fieldname": "last_outbound_at",
+   "fieldtype": "Datetime",
+   "label": "Last Outbound At"
+  },
+  {
+   "description": "Free-form (session) sends are only allowed until this time.",
+   "fieldname": "session_expires_at",
+   "fieldtype": "Datetime",
+   "label": "Session Expires At"
+  },
+  {
+   "fieldname": "column_break_signals",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "replied",
+   "fieldtype": "Check",
+   "label": "Replied"
+  },
+  {
+   "default": "0",
+   "fieldname": "opted_out",
+   "fieldtype": "Check",
+   "label": "Opted Out"
+  },
+  {
+   "default": "0",
+   "fieldname": "nudge_count",
+   "fieldtype": "Int",
+   "label": "Nudge Count"
+  },
+  {
+   "fieldname": "last_nudge_at",
+   "fieldtype": "Datetime",
+   "label": "Last Nudge At"
+  },
+  {
+   "fieldname": "content_section",
+   "fieldtype": "Section Break",
+   "label": "Last Message"
+  },
+  {
+   "fieldname": "last_message",
+   "fieldtype": "Small Text",
+   "label": "Last Inbound Message"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-07-21 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Msg91 Whatsapp",
+ "name": "WhatsApp Funnel Contact",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}
