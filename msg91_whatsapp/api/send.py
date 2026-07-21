@@ -39,7 +39,7 @@ def _headers(auth_key):
     return {"Content-Type": "application/json", "authkey": auth_key}
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def send_template(to, template_name, components=None, language=None):
     """Send an approved WhatsApp template through MSG91.
 
@@ -73,9 +73,14 @@ def send_template(to, template_name, components=None, language=None):
     return _post(settings, payload)
 
 
-@frappe.whitelist()
+@frappe.whitelist(methods=["POST"])
 def send_session_text(to, body):
-    """Send a free-form text message (only valid inside the 24h session window)."""
+    """Send a free-form text message (only valid inside the 24h session window).
+
+    NOTE: MSG91's /bulk/ endpoint is template-only ("only template is supported
+    for bulk"). Free-form session messages use a different MSG91 endpoint that
+    still needs to be wired here once confirmed from MSG91's API reference.
+    """
     settings = _settings()
     payload = {
         "integrated_number": settings.integrated_number,

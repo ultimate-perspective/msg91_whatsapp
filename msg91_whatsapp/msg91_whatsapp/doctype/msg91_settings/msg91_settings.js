@@ -1,6 +1,6 @@
 frappe.ui.form.on("MSG91 Settings", {
     refresh(frm) {
-        frm.add_custom_button(__("Send Test (free-form)"), () => {
+        frm.add_custom_button(__("Send Test Template"), () => {
             if (frm.is_dirty()) {
                 frappe.msgprint(__("Please save the settings before testing."));
                 return;

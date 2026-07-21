@@ -15,6 +15,8 @@
   "default_language",
   "test_section",
   "test_to",
+  "test_template",
+  "test_components",
   "test_body"
  ],
  "fields": [
@@ -65,18 +67,31 @@
    "collapsible": 1,
    "fieldname": "test_section",
    "fieldtype": "Section Break",
-   "label": "Test (free-form / session)"
+   "label": "Test (template)"
   },
   {
-   "description": "Recipient number, digits only with country code. Only works inside the 24h session window.",
+   "description": "Recipient number, digits only with country code. e.g. 919328785200",
    "fieldname": "test_to",
    "fieldtype": "Data",
    "label": "Test To"
   },
   {
+   "description": "Approved template name on this number's WABA. e.g. test_1",
+   "fieldname": "test_template",
+   "fieldtype": "Data",
+   "label": "Test Template"
+  },
+  {
+   "description": "Optional JSON of template variables, e.g. {\"body_1\": {\"type\": \"text\", \"value\": \"Dhruvil\"}}",
+   "fieldname": "test_components",
+   "fieldtype": "Small Text",
+   "label": "Test Components (JSON)"
+  },
+  {
+   "description": "Only used once MSG91 free-form/session sending is wired.",
    "fieldname": "test_body",
    "fieldtype": "Small Text",
-   "label": "Test Body"
+   "label": "Test Body (session, not yet supported)"
   }
  ],
  "index_web_pages_for_search": 1,
