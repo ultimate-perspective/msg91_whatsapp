@@ -1,16 +1,17 @@
 """MSG91 WhatsApp sender.
 
-Two entry points:
+Two entry points, two different MSG91 endpoints:
 
-- ``send_template``     -> approved template message. Works OUTSIDE the 24h
-                           session window (business-initiated). Used for the
+- ``send_template``     -> approved template message via the ``/bulk/`` endpoint.
+                           Works OUTSIDE the 24h session window (business-
+                           initiated). Nested ``payload`` schema. Used for the
                            ``outreach_seen`` and re-engagement funnel stages.
-- ``send_session_text`` -> free-form text. Only valid INSIDE the 24h session
-                           window (i.e. after the user has messaged us). Used
-                           for the ``interacted`` / ``warm`` stages.
+- ``send_session_text`` -> free-form text via the non-bulk
+                           ``/whatsapp-outbound-message/`` endpoint. Only valid
+                           INSIDE the 24h session window. Flat schema
+                           (``recipient_number`` + ``text``). Used for the
+                           ``interacted`` / ``warm`` stages.
 
-The exact MSG91 payload schema is confirmed against the account's dashboard on
-first live send; the template shape below follows MSG91's v5 bulk outbound API.
 The auth key is read from the encrypted ``MSG91 Settings`` password field and is
 never hard-coded.
 """
@@ -30,9 +31,18 @@ def _settings():
     return settings
 
 
-def _endpoint(settings):
-    base = (settings.base_url or "https://api.msg91.com/api/v5").rstrip("/")
-    return f"{base}/whatsapp/whatsapp-outbound-message/bulk/"
+def _base(settings):
+    return (settings.base_url or "https://api.msg91.com/api/v5").rstrip("/")
+
+
+def _bulk_endpoint(settings):
+    """Template messages (business-initiated)."""
+    return f"{_base(settings)}/whatsapp/whatsapp-outbound-message/bulk/"
+
+
+def _session_endpoint(settings):
+    """Free-form session messages (inside the 24h window)."""
+    return f"{_base(settings)}/whatsapp/whatsapp-outbound-message/"
 
 
 def _headers(auth_key):
@@ -41,12 +51,13 @@ def _headers(auth_key):
 
 @frappe.whitelist(methods=["POST"])
 def send_template(to, template_name, components=None, language=None):
-    """Send an approved WhatsApp template through MSG91.
+    """Send an approved WhatsApp template through MSG91's /bulk/ endpoint.
 
     :param to: recipient number, digits only with country code (e.g. 9198...).
     :param template_name: approved MSG91 template name (e.g. ``test_1``).
     :param components: dict of component values, e.g.
-        ``{"body_1": {"type": "text", "value": "Dhruvil"}}``.
+        ``{"body_1": {"type": "text", "value": "Dhruvil"}}``. Supports
+        ``header_1``/``body_N``/``button_N`` for any header/body/button param.
     :param language: template language code; falls back to the configured default.
     """
     settings = _settings()
@@ -62,7 +73,7 @@ def send_template(to, template_name, components=None, language=None):
             "template": {
                 "name": template_name,
                 "language": {
-                    "code": language or settings.default_language or "en",
+                    "code": language or settings.default_language or "en_US",
                     "policy": "deterministic",
                 },
                 "namespace": settings.namespace,
@@ -70,37 +81,31 @@ def send_template(to, template_name, components=None, language=None):
             },
         },
     }
-    return _post(settings, payload)
+    return _post(settings, _bulk_endpoint(settings), payload)
 
 
 @frappe.whitelist(methods=["POST"])
 def send_session_text(to, body):
-    """Send a free-form text message (only valid inside the 24h session window).
+    """Send a free-form text message via MSG91's non-bulk endpoint.
 
-    NOTE: MSG91's /bulk/ endpoint is template-only ("only template is supported
-    for bulk"). Free-form session messages use a different MSG91 endpoint that
-    still needs to be wired here once confirmed from MSG91's API reference.
+    Only valid INSIDE the 24h session window (after the customer has messaged
+    us). Outside the window MSG91/Meta rejects it — fall back to a template.
     """
     settings = _settings()
     payload = {
         "integrated_number": settings.integrated_number,
+        "recipient_number": str(to),
         "content_type": "text",
-        "payload": {
-            "messaging_product": "whatsapp",
-            "type": "text",
-            "text": {"body": body},
-            "to": [str(to)],
-        },
+        "text": body,
     }
-    return _post(settings, payload)
+    return _post(settings, _session_endpoint(settings), payload)
 
 
-def _post(settings, payload):
+def _post(settings, url, payload):
     auth_key = settings.get_password("auth_key")
     if not auth_key:
         frappe.throw("MSG91 Settings is missing the Auth Key.")
 
-    url = _endpoint(settings)
     try:
         resp = requests.post(url, headers=_headers(auth_key), json=payload, timeout=30)
     except requests.RequestException as exc:
@@ -112,9 +117,7 @@ def _post(settings, payload):
     except ValueError:
         data = {"raw": resp.text}
 
-    frappe.logger(LOGGER).info(
-        {"url": url, "status": resp.status_code, "to": payload.get("payload", {}).get("to"), "response": data}
-    )
+    frappe.logger(LOGGER).info({"url": url, "status": resp.status_code, "response": data})
 
     if resp.status_code >= 400 or (isinstance(data, dict) and data.get("hasError")):
         frappe.throw(f"MSG91 send failed ({resp.status_code}): {resp.text}")
