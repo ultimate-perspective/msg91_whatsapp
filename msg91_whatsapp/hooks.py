@@ -10,6 +10,15 @@ override_doctype_class = {
     "WhatsApp Message": "msg91_whatsapp.overrides.whatsapp_message.MSG91WhatsAppMessage"
 }
 
+# Make the CRM's WhatsApp tab account-aware (per-number threads + window state)
+# without forking frappe/crm. The extra argument is optional, so the stock
+# frontend keeps working unchanged.
+override_whitelisted_methods = {
+    "crm.api.whatsapp.get_whatsapp_messages": "msg91_whatsapp.api.crm.get_whatsapp_messages",
+    "crm.api.whatsapp.create_whatsapp_message": "msg91_whatsapp.api.crm.create_whatsapp_message",
+    "crm.api.whatsapp.send_whatsapp_template": "msg91_whatsapp.api.crm.send_whatsapp_template",
+}
+
 # Inbound messages open the 24h session window and advance the funnel.
 doc_events = {
     "WhatsApp Message": {

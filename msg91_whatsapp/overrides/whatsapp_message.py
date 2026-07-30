@@ -4,9 +4,8 @@ frappe_whatsapp funnels every outbound message (template and free-form alike)
 through ``WhatsAppMessage.notify()``. By overriding just that one method we keep
 its entire UI, template store and conversation view, and only swap the transport.
 
-Per-number: a ``WhatsApp Account`` with ``msg91_enabled`` goes out via MSG91
-using its own ``msg91_integrated_number``; any other account still goes direct to
-Meta via the parent implementation.
+Every number is linked through MSG91, so MSG91 is the only transport — each
+``WhatsApp Account`` sends from its own ``msg91_integrated_number``.
 """
 
 import frappe
@@ -28,8 +27,21 @@ class MSG91WhatsAppMessage(WhatsAppMessage):
         super().before_insert()
 
     def _bind_conversation_account(self):
-        """Keep replies on the number the conversation already started on."""
-        if self.type == "Outgoing" and not self.whatsapp_account and self.to:
+        """Decide which of our numbers this message goes out from.
+
+        A customer can hold concurrent conversations on several of our numbers,
+        so precedence is: explicitly set on the doc > the number the CRM UI
+        picked (flag) > the number this customer is already talking to.
+        """
+        if self.type != "Outgoing" or self.whatsapp_account:
+            return
+
+        chosen = frappe.flags.get("msg91_whatsapp_account")
+        if chosen:
+            self.whatsapp_account = chosen
+            return
+
+        if self.to:
             account = get_active_account(self.to)
             if account:
                 self.whatsapp_account = account
@@ -37,14 +49,10 @@ class MSG91WhatsAppMessage(WhatsAppMessage):
     def notify(self, data):
         account = frappe.get_doc("WhatsApp Account", self.whatsapp_account)
 
-        if not account.get("msg91_enabled"):
-            return super().notify(data)
-
         integrated_number = account.get("msg91_integrated_number")
         if not integrated_number:
             frappe.throw(
-                f"WhatsApp Account {account.name} has MSG91 enabled but no "
-                "MSG91 Integrated Number set."
+                f"WhatsApp Account {account.name} has no MSG91 Integrated Number set."
             )
 
         is_template = translate.is_template(data)
