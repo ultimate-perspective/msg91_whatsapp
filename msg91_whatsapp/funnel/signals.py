@@ -1,14 +1,20 @@
-"""Funnel signal handlers.
+"""Inbound signal handling.
 
-P2: an inbound WhatsApp reply is the ``interacted`` signal — it also opens the
-24h session window. We upsert a ``WhatsApp Funnel Contact`` keyed by the
-customer's phone number and advance it down-funnel.
+An inbound WhatsApp message does two things:
+
+1. Opens/refreshes the customer's 24h session window on the business number they
+   messaged (``WhatsApp Session``) — this is what makes free-form replies legal.
+2. Advances the lead funnel (``WhatsApp Funnel Contact``).
 
 Wired via ``doc_events`` on frappe_whatsapp's ``WhatsApp Message`` (after_insert).
 """
 
 import frappe
 from frappe.utils import add_to_date, now_datetime
+
+from msg91_whatsapp.msg91_whatsapp.doctype.whatsapp_session.whatsapp_session import (
+    touch_inbound,
+)
 
 FUNNEL_DOCTYPE = "WhatsApp Funnel Contact"
 
@@ -22,23 +28,36 @@ def on_whatsapp_message(doc, method=None):
     if not phone:
         return
 
-    contact = get_or_create_contact(phone, profile_name=doc.get("profile_name"))
+    body = frappe.utils.strip_html_tags(doc.get("message") or "")[:1000]
+
+    _open_session(doc, phone, body)
+    _advance_funnel(doc, phone, body)
+
+
+def _open_session(doc, phone, body):
+    """The 24h window belongs to the number the customer actually messaged."""
+    account = doc.get("whatsapp_account")
+    if not account:
+        return
+    touch_inbound(phone, account, profile_name=doc.get("profile_name"), message=body)
+
+
+def _advance_funnel(doc, phone, body):
+    contact = _get_or_create_contact(phone, profile_name=doc.get("profile_name"))
 
     now = now_datetime()
     contact.last_inbound_at = now
     contact.session_expires_at = add_to_date(now, hours=24)
     contact.replied = 1
-
-    body = doc.get("message")
     if body:
-        contact.last_message = frappe.utils.strip_html_tags(body)[:1000]
+        contact.last_message = body
 
     # An inbound reply means they at least interacted.
     contact.advance_to("Interacted")
     contact.save(ignore_permissions=True)
 
 
-def get_or_create_contact(phone, profile_name=None):
+def _get_or_create_contact(phone, profile_name=None):
     name = frappe.db.exists(FUNNEL_DOCTYPE, {"phone": phone})
     if name:
         contact = frappe.get_doc(FUNNEL_DOCTYPE, name)
