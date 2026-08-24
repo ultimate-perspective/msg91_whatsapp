@@ -193,13 +193,6 @@
    "label": "WhatsApp Funnel Contact",
    "link_to": "WhatsApp Funnel Contact",
    "type": "DocType"
-  },
-  {
-   "color": "Grey",
-   "doc_view": "List",
-   "label": "WhatsApp Funnel Event",
-   "link_to": "WhatsApp Funnel Event",
-   "type": "DocType"
   }
  ],
  "title": "Msg91 Whatsapp"
