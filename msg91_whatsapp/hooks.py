@@ -19,18 +19,19 @@ override_whitelisted_methods = {
     "crm.api.whatsapp.send_whatsapp_template": "msg91_whatsapp.api.crm.send_whatsapp_template",
 }
 
-# Inbound messages open the 24h session window and advance the funnel.
+# Every message, either direction, becomes a funnel event. Inbound also
+# reopens the 24h session window.
 doc_events = {
     "WhatsApp Message": {
         "after_insert": "msg91_whatsapp.funnel.signals.on_whatsapp_message",
     }
 }
 
-# Scheduled tasks (nudge engine - parked on the funnel-campaigns branch)
-# scheduler_events = {
-#     "cron": {
-#         "*/15 * * * *": [
-#             "msg91_whatsapp.funnel.scheduler.run_nudges",
-#         ]
-#     }
-# }
+# Time-based rules ("gone quiet for 14 days") have no event to ride in on, so
+# the whole book gets re-scored on a sweep. Hourly is plenty for a funnel whose
+# fastest rule is measured in days.
+scheduler_events = {
+    "hourly_long": [
+        "msg91_whatsapp.funnel.engine.sweep",
+    ]
+}

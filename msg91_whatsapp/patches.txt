@@ -2,3 +2,5 @@
 
 [post_model_sync]
 msg91_whatsapp.patches.add_msg91_account_fields.execute
+msg91_whatsapp.patches.add_msg91_message_fields.execute
+msg91_whatsapp.patches.seed_funnel_defaults.execute

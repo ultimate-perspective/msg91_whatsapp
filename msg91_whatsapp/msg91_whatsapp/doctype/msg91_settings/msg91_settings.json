@@ -13,6 +13,11 @@
   "column_break_conn",
   "namespace",
   "default_language",
+  "funnel_section",
+  "webhook_url",
+  "webhook_token",
+  "column_break_funnel",
+  "auto_write_lead_status",
   "test_section",
   "test_to",
   "test_template",
@@ -62,6 +67,35 @@
    "fieldname": "default_language",
    "fieldtype": "Data",
    "label": "Default Template Language"
+  },
+  {
+   "fieldname": "funnel_section",
+   "fieldtype": "Section Break",
+   "label": "Funnel"
+  },
+  {
+   "description": "Paste this into MSG91 Dashboard > WhatsApp > Webhook (New), event \"On Outbound Report Received\". Save this form once after setting the token to generate it.",
+   "fieldname": "webhook_url",
+   "fieldtype": "Data",
+   "label": "Delivery Report Webhook URL",
+   "read_only": 1
+  },
+  {
+   "description": "Any long random string. It is the only thing standing between MSG91's callback URL and the public internet.",
+   "fieldname": "webhook_token",
+   "fieldtype": "Password",
+   "label": "Webhook Token"
+  },
+  {
+   "fieldname": "column_break_funnel",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "When a contact changes state, push the mapped status onto the matched CRM Lead. Leave off until your states and mappings look right.",
+   "fieldname": "auto_write_lead_status",
+   "fieldtype": "Check",
+   "label": "Auto Write Lead Status"
   },
   {
    "collapsible": 1,

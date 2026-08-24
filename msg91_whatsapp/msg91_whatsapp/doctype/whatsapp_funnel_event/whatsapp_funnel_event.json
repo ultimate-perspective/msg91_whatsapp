@@ -1,0 +1,165 @@
+{
+ "actions": [],
+ "autoname": "hash",
+ "creation": "2026-08-24 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 0,
+ "engine": "InnoDB",
+ "field_order": [
+  "event_type",
+  "occurred_at",
+  "contact_phone",
+  "column_break_head",
+  "lead",
+  "whatsapp_account",
+  "direction",
+  "message_section",
+  "whatsapp_message",
+  "request_id",
+  "column_break_msg",
+  "template_name",
+  "uuid",
+  "detail_section",
+  "detail",
+  "payload"
+ ],
+ "fields": [
+  {
+   "description": "What happened. Rules are written against these.",
+   "fieldname": "event_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Event Type",
+   "options": "Outbound Sent\nDelivered\nRead\nFailed\nClicked\nInbound Received\nOpted Out",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "occurred_at",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Occurred At",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "description": "Customer's number, digits only with country code.",
+   "fieldname": "contact_phone",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Contact Phone",
+   "read_only": 1,
+   "reqd": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_head",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "lead",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Lead",
+   "options": "CRM Lead",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "whatsapp_account",
+   "fieldtype": "Link",
+   "label": "WhatsApp Account",
+   "options": "WhatsApp Account",
+   "read_only": 1
+  },
+  {
+   "default": "Outbound",
+   "fieldname": "direction",
+   "fieldtype": "Select",
+   "label": "Direction",
+   "options": "Outbound\nInbound",
+   "read_only": 1
+  },
+  {
+   "fieldname": "message_section",
+   "fieldtype": "Section Break",
+   "label": "Message"
+  },
+  {
+   "fieldname": "whatsapp_message",
+   "fieldtype": "Link",
+   "label": "WhatsApp Message",
+   "options": "WhatsApp Message",
+   "read_only": 1
+  },
+  {
+   "description": "MSG91's request id, the key that ties a send to its later status events.",
+   "fieldname": "request_id",
+   "fieldtype": "Data",
+   "label": "Request ID",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_msg",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "template_name",
+   "fieldtype": "Data",
+   "label": "Template Name",
+   "read_only": 1
+  },
+  {
+   "description": "Meta's message id (wamid), when MSG91 reports one.",
+   "fieldname": "uuid",
+   "fieldtype": "Data",
+   "label": "Meta Message ID",
+   "read_only": 1
+  },
+  {
+   "fieldname": "detail_section",
+   "fieldtype": "Section Break",
+   "label": "Detail"
+  },
+  {
+   "description": "Human-readable summary: message text, failure reason, clicked URL.",
+   "fieldname": "detail",
+   "fieldtype": "Small Text",
+   "label": "Detail",
+   "read_only": 1
+  },
+  {
+   "fieldname": "payload",
+   "fieldtype": "Code",
+   "label": "Raw Payload",
+   "options": "JSON",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-08-24 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Msg91 Whatsapp",
+ "name": "WhatsApp Funnel Event",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "export": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1
+  }
+ ],
+ "sort_field": "occurred_at",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 0
+}

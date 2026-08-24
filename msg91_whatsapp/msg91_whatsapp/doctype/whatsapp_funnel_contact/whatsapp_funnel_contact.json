@@ -9,19 +9,28 @@
  "field_order": [
   "phone",
   "profile_name",
-  "stage",
+  "lead",
+  "column_break_head",
+  "state",
+  "score",
+  "state_updated_at",
   "signals_section",
   "last_inbound_at",
+  "last_delivered_at",
   "last_read_at",
+  "last_clicked_at",
   "last_outbound_at",
   "session_expires_at",
   "column_break_signals",
+  "inbound_count",
+  "outbound_count",
   "replied",
   "opted_out",
   "nudge_count",
   "last_nudge_at",
   "content_section",
-  "last_message"
+  "last_message",
+  "score_breakdown"
  ],
  "fields": [
   {
@@ -39,13 +48,39 @@
    "label": "Profile Name"
   },
   {
-   "default": "Outreach Sent",
-   "fieldname": "stage",
-   "fieldtype": "Select",
+   "description": "Matched on the last 10 digits of the number. Correct it by hand if it picked the wrong lead.",
+   "fieldname": "lead",
+   "fieldtype": "Link",
+   "label": "Lead",
+   "options": "CRM Lead",
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_head",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Resolved by the rule engine. Define the states in WhatsApp Lead State.",
+   "fieldname": "state",
+   "fieldtype": "Link",
    "in_list_view": 1,
    "in_standard_filter": 1,
-   "label": "Stage",
-   "options": "Outreach Sent\nOutreach Seen\nInteracted\nWarm Lead\nHot Lead"
+   "label": "State",
+   "options": "WhatsApp Lead State"
+  },
+  {
+   "default": "0",
+   "fieldname": "score",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Score",
+   "read_only": 1
+  },
+  {
+   "fieldname": "state_updated_at",
+   "fieldtype": "Datetime",
+   "label": "State Updated At",
+   "read_only": 1
   },
   {
    "fieldname": "signals_section",
@@ -55,23 +90,39 @@
   {
    "fieldname": "last_inbound_at",
    "fieldtype": "Datetime",
-   "label": "Last Inbound At"
+   "label": "Last Inbound At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_delivered_at",
+   "fieldtype": "Datetime",
+   "label": "Last Delivered At",
+   "read_only": 1
   },
   {
    "fieldname": "last_read_at",
    "fieldtype": "Datetime",
-   "label": "Last Read At"
+   "label": "Last Read At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_clicked_at",
+   "fieldtype": "Datetime",
+   "label": "Last Clicked At",
+   "read_only": 1
   },
   {
    "fieldname": "last_outbound_at",
    "fieldtype": "Datetime",
-   "label": "Last Outbound At"
+   "label": "Last Outbound At",
+   "read_only": 1
   },
   {
    "description": "Free-form (session) sends are only allowed until this time.",
    "fieldname": "session_expires_at",
    "fieldtype": "Datetime",
-   "label": "Session Expires At"
+   "label": "Session Expires At",
+   "read_only": 1
   },
   {
    "fieldname": "column_break_signals",
@@ -79,12 +130,28 @@
   },
   {
    "default": "0",
-   "fieldname": "replied",
-   "fieldtype": "Check",
-   "label": "Replied"
+   "fieldname": "inbound_count",
+   "fieldtype": "Int",
+   "label": "Inbound Count",
+   "read_only": 1
   },
   {
    "default": "0",
+   "fieldname": "outbound_count",
+   "fieldtype": "Int",
+   "label": "Outbound Count",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "replied",
+   "fieldtype": "Check",
+   "label": "Replied",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "description": "Blocks every automated send, regardless of state or score.",
    "fieldname": "opted_out",
    "fieldtype": "Check",
    "label": "Opted Out"
@@ -93,12 +160,14 @@
    "default": "0",
    "fieldname": "nudge_count",
    "fieldtype": "Int",
-   "label": "Nudge Count"
+   "label": "Nudge Count",
+   "read_only": 1
   },
   {
    "fieldname": "last_nudge_at",
    "fieldtype": "Datetime",
-   "label": "Last Nudge At"
+   "label": "Last Nudge At",
+   "read_only": 1
   },
   {
    "fieldname": "content_section",
@@ -108,12 +177,21 @@
   {
    "fieldname": "last_message",
    "fieldtype": "Small Text",
-   "label": "Last Inbound Message"
+   "label": "Last Inbound Message",
+   "read_only": 1
+  },
+  {
+   "description": "Which signals produced the current score.",
+   "fieldname": "score_breakdown",
+   "fieldtype": "Code",
+   "label": "Score Breakdown",
+   "options": "JSON",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "links": [],
- "modified": "2026-07-21 00:00:00.000000",
+ "modified": "2026-08-24 00:00:00.000000",
  "modified_by": "Administrator",
  "module": "Msg91 Whatsapp",
  "name": "WhatsApp Funnel Contact",

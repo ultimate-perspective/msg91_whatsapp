@@ -62,7 +62,12 @@ class MSG91WhatsAppMessage(WhatsAppMessage):
         payload = translate.to_msg91(data, integrated_number)
         response = client.post(payload, template=is_template)
 
-        self.message_id = client.extract_message_id(response)
+        # `notify` runs inside before_insert, so these stick without an extra
+        # write. The funnel event is emitted later, from the after_insert hook,
+        # once the doc actually has a name to point at.
+        request_id = client.extract_message_id(response)
+        self.message_id = request_id
+        self.msg91_request_id = request_id
         self._record_outbound(account)
         return response
 

@@ -1,0 +1,164 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:rule_name",
+ "creation": "2026-08-24 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "rule_name",
+  "enabled",
+  "priority",
+  "column_break_head",
+  "trigger",
+  "event_type",
+  "conditions_section",
+  "conditions_html",
+  "conditions",
+  "then_section",
+  "score_delta",
+  "max_times",
+  "column_break_then",
+  "set_state",
+  "set_opted_out",
+  "notes_section",
+  "notes"
+ ],
+ "fields": [
+  {
+   "fieldname": "rule_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Rule Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "in_list_view": 1,
+   "label": "Enabled"
+  },
+  {
+   "default": "50",
+   "description": "Lower runs first. Only matters when two rules set a state.",
+   "fieldname": "priority",
+   "fieldtype": "Int",
+   "label": "Priority"
+  },
+  {
+   "fieldname": "column_break_head",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "On Event",
+   "description": "On Event fires once per matching event. On Schedule is re-checked on every sweep, which is how time-based rules like \"gone quiet for 14 days\" work.",
+   "fieldname": "trigger",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Trigger",
+   "options": "On Event\nOn Schedule",
+   "reqd": 1
+  },
+  {
+   "depends_on": "eval:doc.trigger=='On Event'",
+   "fieldname": "event_type",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "Event Type",
+   "mandatory_depends_on": "eval:doc.trigger=='On Event'",
+   "options": "Outbound Sent\nDelivered\nRead\nFailed\nClicked\nInbound Received\nOpted Out"
+  },
+  {
+   "fieldname": "conditions_section",
+   "fieldtype": "Section Break",
+   "label": "If"
+  },
+  {
+   "fieldname": "conditions_html",
+   "fieldtype": "HTML",
+   "options": "<p class=\"text-muted small\">All conditions must hold. Leave empty to match every event of this type.</p>"
+  },
+  {
+   "fieldname": "conditions",
+   "fieldtype": "Table",
+   "label": "Conditions",
+   "options": "WhatsApp Lead Condition"
+  },
+  {
+   "fieldname": "then_section",
+   "fieldtype": "Section Break",
+   "label": "Then"
+  },
+  {
+   "default": "0",
+   "description": "Points to add to the contact's score. Negative values are allowed, which is how decay works.",
+   "fieldname": "score_delta",
+   "fieldtype": "Int",
+   "label": "Score Delta"
+  },
+  {
+   "default": "0",
+   "description": "Cap how often this rule can score the same contact. 0 means no cap.",
+   "depends_on": "eval:doc.trigger=='On Event'",
+   "fieldname": "max_times",
+   "fieldtype": "Int",
+   "label": "Max Times Per Contact"
+  },
+  {
+   "fieldname": "column_break_then",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Optional. Forces this exact state, ignoring score bands. Use it for terminal states like Converted or Opted Out.",
+   "fieldname": "set_state",
+   "fieldtype": "Link",
+   "label": "Set State",
+   "options": "WhatsApp Lead State"
+  },
+  {
+   "default": "0",
+   "description": "Marks the contact opted out, which blocks every automated send.",
+   "fieldname": "set_opted_out",
+   "fieldtype": "Check",
+   "label": "Mark Opted Out"
+  },
+  {
+   "fieldname": "notes_section",
+   "fieldtype": "Section Break",
+   "label": "Notes"
+  },
+  {
+   "fieldname": "notes",
+   "fieldtype": "Small Text",
+   "label": "Notes"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-08-24 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Msg91 Whatsapp",
+ "name": "WhatsApp Lead Rule",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "priority",
+ "sort_order": "ASC",
+ "states": [],
+ "track_changes": 1
+}

@@ -1,0 +1,136 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:state_name",
+ "creation": "2026-08-24 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "state_name",
+  "enabled",
+  "rank",
+  "column_break_head",
+  "min_score",
+  "is_terminal",
+  "allow_regression",
+  "crm_section",
+  "maps_to_status",
+  "column_break_crm",
+  "maps_to_lost_reason",
+  "description_section",
+  "description"
+ ],
+ "fields": [
+  {
+   "description": "Whatever you want to call it: Hot, Price Shopper, Ghosted.",
+   "fieldname": "state_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "State Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "default": "1",
+   "fieldname": "enabled",
+   "fieldtype": "Check",
+   "label": "Enabled"
+  },
+  {
+   "description": "Position in the funnel, low to high. Used to decide what counts as moving backwards.",
+   "fieldname": "rank",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Rank",
+   "reqd": 1
+  },
+  {
+   "fieldname": "column_break_head",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "description": "A contact lands in this state once their score reaches this number. The highest qualifying state wins.",
+   "depends_on": "eval:!doc.is_terminal",
+   "fieldname": "min_score",
+   "fieldtype": "Int",
+   "in_list_view": 1,
+   "label": "Minimum Score"
+  },
+  {
+   "default": "0",
+   "description": "Terminal states (Converted, Lost, Opted Out) are set by a rule and never by score, and nothing moves out of them automatically.",
+   "fieldname": "is_terminal",
+   "fieldtype": "Check",
+   "label": "Is Terminal"
+  },
+  {
+   "default": "0",
+   "description": "Allow a contact in this state to fall back to a lower one, for example going cold after weeks of silence.",
+   "depends_on": "eval:!doc.is_terminal",
+   "fieldname": "allow_regression",
+   "fieldtype": "Check",
+   "label": "Allow Regression"
+  },
+  {
+   "fieldname": "crm_section",
+   "fieldtype": "Section Break",
+   "label": "CRM Mirror"
+  },
+  {
+   "description": "Optional. When set, and when MSG91 Settings has Auto Write Lead Status enabled, the matched CRM Lead is moved to this status.",
+   "fieldname": "maps_to_status",
+   "fieldtype": "Link",
+   "label": "Set Lead Status To",
+   "options": "CRM Lead Status"
+  },
+  {
+   "fieldname": "column_break_crm",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "Optional. For negative terminal states.",
+   "fieldname": "maps_to_lost_reason",
+   "fieldtype": "Link",
+   "label": "Set Lost Reason To",
+   "options": "CRM Lost Reason"
+  },
+  {
+   "fieldname": "description_section",
+   "fieldtype": "Section Break",
+   "label": "Notes"
+  },
+  {
+   "description": "What this state means to your team.",
+   "fieldname": "description",
+   "fieldtype": "Small Text",
+   "label": "Description"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [],
+ "modified": "2026-08-24 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Msg91 Whatsapp",
+ "name": "WhatsApp Lead State",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "rank",
+ "sort_order": "ASC",
+ "states": [],
+ "track_changes": 1
+}
