@@ -39,6 +39,8 @@ thresholds sit.
 | `WhatsApp Funnel Contact` | One row per customer number: cached signals, score, current state |
 | `WhatsApp Lead State` | **You define these.** Name, rank, entry score, terminal, CRM mapping |
 | `WhatsApp Lead Rule` | **You define these.** When X happens and Y holds, add points or force a state |
+| `WhatsApp Campaign` | **You define these.** Audience, first touch, nudge sequence, schedule, exit rules |
+| `WhatsApp Campaign Enrollment` | One lead's trip through one campaign. Mechanical, not editable |
 
 ## How scoring works
 
@@ -68,6 +70,44 @@ Condition facts available: `message_text`, `template_name`, `current_state`,
 For keyword matching use the `in` operator with a comma-separated list; it
 matches if any entry appears anywhere in the text, case-insensitively.
 
+## Campaigns
+
+Campaigns are the **only** thing that sends. Nothing goes out before a campaign
+is started, and there is no ad-hoc automated message, so every outbound message
+traces back to something a human switched on.
+
+The division of labour:
+
+- The **campaign** decides who gets messaged and when.
+- The **state engine** decides how interested they are.
+
+A campaign has a first-touch template, sent on enrolment, then a list of steps.
+Each step waits N hours after the previous one, then sends its template unless
+its condition says otherwise (`If Not Replied`, `If Not Read`, `If Not Clicked`,
+or `Always`), optionally gated on the contact's global score.
+
+Every campaign message is an approved template. Free-form nudges would fail on
+day three of a sequence, when the 24h window has long closed.
+
+### States are global, journeys are not
+
+A lead can run through many campaigns over time. Their **journey** is per
+campaign: step 3 of the Diwali Sale, waiting 48 hours. Their **state** is not:
+asking about pricing makes the person Hot, full stop, not "Hot in Diwali".
+
+The two layers talk in one direction each. Campaign events are tagged with the
+campaign for reporting, and score globally. Global state gates the campaign, via
+**Exit When State Is**.
+
+Opted-out contacts always exit, whether or not you list Opted Out there.
+
+### What is deliberately not here
+
+There is no global send cap. Campaigns are the only sender, so a contact
+enrolled in two live campaigns will hear from both, and neither knows about the
+other. With one campaign running this is a non-issue. Use campaign **Priority**
+if it ever becomes one.
+
 ## Setup
 
 1. **MSG91 Settings**: auth key, integrated number (digits with country code,
@@ -82,6 +122,9 @@ matches if any entry appears anywhere in the text, case-insensitively.
    and rewrite them for your funnel. They are a starting point, not a default.
 6. Turn on *Auto Write Lead Status* once the states look right, if you want the
    CRM Lead status to follow.
+7. Build a **WhatsApp Campaign**, add steps, then press *Start Campaign*. Until
+   a campaign is started, the app records signals and scores contacts but sends
+   nothing on its own.
 
 ## MSG91 endpoints
 
@@ -98,9 +141,8 @@ the single `request_id` in the response can no longer be tied to one recipient.
 
 ## Roadmap
 
-- Campaigns: `WhatsApp Campaign` + steps + enrollment, driving automatic nudges
-  off the state engine, with quiet hours, caps and cooldowns.
 - Intent detection beyond keywords.
+- A panel inside the CRM frontend, so sales users are not in the desk UI.
 
 ## License
 

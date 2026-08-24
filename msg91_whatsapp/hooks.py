@@ -31,7 +31,14 @@ doc_events = {
 # the whole book gets re-scored on a sweep. Hourly is plenty for a funnel whose
 # fastest rule is measured in days.
 scheduler_events = {
+    # Nudges are checked often enough that a "wait 2 hours" step means roughly
+    # two hours. Nothing is sent unless a campaign is Active and a step is due.
+    "cron": {
+        "*/15 * * * *": [
+            "msg91_whatsapp.funnel.campaigns.run",
+        ]
+    },
     "hourly_long": [
         "msg91_whatsapp.funnel.engine.sweep",
-    ]
+    ],
 }

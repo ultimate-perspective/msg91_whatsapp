@@ -104,6 +104,7 @@ def _handle(report):
         uuid=uuid,
         detail=_detail(event_type, report),
         payload=report,
+        campaign=_campaign_for(request_id),
     )
 
     if message:
@@ -127,6 +128,17 @@ def _timestamp(report):
         return get_datetime(raw)
     except Exception:
         return now_datetime()
+
+
+def _campaign_for(request_id):
+    """A delivery report belongs to whatever campaign made the original send."""
+    if not request_id:
+        return None
+    return frappe.db.get_value(
+        "WhatsApp Funnel Event",
+        {"request_id": request_id, "event_type": "Outbound Sent"},
+        "campaign",
+    )
 
 
 def _detail(event_type, report):

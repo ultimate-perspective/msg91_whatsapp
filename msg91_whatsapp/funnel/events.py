@@ -10,7 +10,7 @@ import json
 import frappe
 from frappe.utils import now_datetime
 
-from msg91_whatsapp.funnel import contacts, engine
+from msg91_whatsapp.funnel import campaigns, contacts, engine
 from msg91_whatsapp.utils import normalize_phone
 
 DOCTYPE = "WhatsApp Funnel Event"
@@ -30,6 +30,7 @@ def record(
     detail=None,
     payload=None,
     profile_name=None,
+    campaign=None,
 ):
     """Log one event and fold it into the contact's cached summary.
 
@@ -49,6 +50,7 @@ def record(
             detail=detail,
             payload=payload,
             profile_name=profile_name,
+            campaign=campaign,
         )
     except Exception:
         frappe.log_error(frappe.get_traceback(), f"MSG91: failed to record {event_type}")
@@ -67,6 +69,7 @@ def _record(
     detail=None,
     payload=None,
     profile_name=None,
+    campaign=None,
 ):
     phone = normalize_phone(phone)
     if not phone:
@@ -86,6 +89,7 @@ def _record(
             "contact_phone": phone,
             "lead": contact.get("lead"),
             "whatsapp_account": account,
+            "campaign": campaign,
             "direction": "Inbound" if event_type in INBOUND_EVENTS else "Outbound",
             "whatsapp_message": whatsapp_message,
             "request_id": request_id,
@@ -97,6 +101,7 @@ def _record(
     )
     event.insert(ignore_permissions=True)
 
+    campaigns.note_engagement(phone, event_type)
     contacts.apply_event(contact, event_type, occurred_at=at, detail=detail)
     # Re-score immediately, so a reply that makes someone Hot shows up as Hot
     # rather than waiting for the next sweep. `evaluate` saves the contact.

@@ -12,6 +12,7 @@
   "column_break_head",
   "lead",
   "whatsapp_account",
+  "campaign",
   "direction",
   "message_section",
   "whatsapp_message",
@@ -74,6 +75,16 @@
    "label": "WhatsApp Account",
    "options": "WhatsApp Account",
    "read_only": 1
+  },
+  {
+   "description": "Which campaign sent this, when a campaign did. Attribution only; scoring stays global.",
+   "fieldname": "campaign",
+   "fieldtype": "Link",
+   "in_standard_filter": 1,
+   "label": "Campaign",
+   "options": "WhatsApp Campaign",
+   "read_only": 1,
+   "search_index": 1
   },
   {
    "default": "Outbound",

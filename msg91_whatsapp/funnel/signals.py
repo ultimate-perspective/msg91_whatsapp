@@ -62,4 +62,5 @@ def _on_outbound(doc):
         whatsapp_message=doc.name,
         request_id=doc.get("msg91_request_id"),
         template_name=doc.get("template"),
+        campaign=frappe.flags.get("msg91_campaign"),
     )

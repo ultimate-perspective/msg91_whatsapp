@@ -1,0 +1,192 @@
+{
+ "actions": [],
+ "autoname": "hash",
+ "creation": "2026-08-24 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 0,
+ "engine": "InnoDB",
+ "field_order": [
+  "campaign",
+  "contact",
+  "phone",
+  "column_break_head",
+  "lead",
+  "status",
+  "outcome",
+  "journey_section",
+  "current_step",
+  "next_action_at",
+  "entered_at",
+  "column_break_journey",
+  "nudges_sent",
+  "last_sent_at",
+  "exit_reason",
+  "engagement_section",
+  "replied_in_campaign",
+  "read_in_campaign",
+  "column_break_engagement",
+  "clicked_in_campaign"
+ ],
+ "fields": [
+  {
+   "fieldname": "campaign",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Campaign",
+   "options": "WhatsApp Campaign",
+   "read_only": 1,
+   "reqd": 1
+  },
+  {
+   "fieldname": "contact",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Contact",
+   "options": "WhatsApp Funnel Contact",
+   "read_only": 1
+  },
+  {
+   "fieldname": "phone",
+   "fieldtype": "Data",
+   "label": "Phone",
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "column_break_head",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "lead",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Lead",
+   "options": "CRM Lead",
+   "read_only": 1
+  },
+  {
+   "default": "Queued",
+   "description": "Where the machine is. Queued means the first touch has not gone out yet.",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Queued\nActive\nWaiting\nCompleted\nExited",
+   "read_only": 1
+  },
+  {
+   "fieldname": "outcome",
+   "fieldtype": "Select",
+   "label": "Outcome",
+   "options": "\nConverted\nLost",
+   "read_only": 1
+  },
+  {
+   "fieldname": "journey_section",
+   "fieldtype": "Section Break",
+   "label": "Journey"
+  },
+  {
+   "default": "0",
+   "description": "How many steps of the campaign's sequence have been processed.",
+   "fieldname": "current_step",
+   "fieldtype": "Int",
+   "label": "Current Step",
+   "read_only": 1
+  },
+  {
+   "description": "When the next step comes due. The runner only looks at rows whose time has passed.",
+   "fieldname": "next_action_at",
+   "fieldtype": "Datetime",
+   "in_list_view": 1,
+   "label": "Next Action At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "entered_at",
+   "fieldtype": "Datetime",
+   "label": "Entered At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_journey",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "nudges_sent",
+   "fieldtype": "Int",
+   "label": "Messages Sent",
+   "read_only": 1
+  },
+  {
+   "fieldname": "last_sent_at",
+   "fieldtype": "Datetime",
+   "label": "Last Sent At",
+   "read_only": 1
+  },
+  {
+   "fieldname": "exit_reason",
+   "fieldtype": "Data",
+   "label": "Exit Reason",
+   "read_only": 1
+  },
+  {
+   "fieldname": "engagement_section",
+   "fieldtype": "Section Break",
+   "label": "Engagement (this campaign only)"
+  },
+  {
+   "default": "0",
+   "fieldname": "replied_in_campaign",
+   "fieldtype": "Check",
+   "label": "Replied",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "read_in_campaign",
+   "fieldtype": "Check",
+   "label": "Read",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_engagement",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "clicked_in_campaign",
+   "fieldtype": "Check",
+   "label": "Clicked",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 0,
+ "links": [],
+ "modified": "2026-08-24 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Msg91 Whatsapp",
+ "name": "WhatsApp Campaign Enrollment",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 0
+}

@@ -1,0 +1,256 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "field:campaign_name",
+ "creation": "2026-08-24 00:00:00.000000",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "campaign_name",
+  "status",
+  "priority",
+  "column_break_head",
+  "whatsapp_account",
+  "objective",
+  "outreach_section",
+  "outreach_template",
+  "audience_section",
+  "enroll_mode",
+  "audience_filter",
+  "schedule_section",
+  "start_on",
+  "end_on",
+  "column_break_schedule",
+  "timezone",
+  "send_window_start",
+  "send_window_end",
+  "journey_section",
+  "journey_html",
+  "steps",
+  "exit_section",
+  "exit_states",
+  "metrics_section",
+  "enrolled_count",
+  "sent_count",
+  "column_break_metrics",
+  "replied_count",
+  "exited_count"
+ ],
+ "fields": [
+  {
+   "fieldname": "campaign_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Campaign Name",
+   "reqd": 1,
+   "unique": 1
+  },
+  {
+   "default": "Draft",
+   "description": "Nothing is sent until this is Active. Use the Start Campaign button rather than editing this by hand.",
+   "fieldname": "status",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "in_standard_filter": 1,
+   "label": "Status",
+   "options": "Draft\nActive\nPaused\nCompleted",
+   "read_only": 1
+  },
+  {
+   "default": "50",
+   "description": "Lower runs first when several campaigns are due for the same contact.",
+   "fieldname": "priority",
+   "fieldtype": "Int",
+   "label": "Priority"
+  },
+  {
+   "fieldname": "column_break_head",
+   "fieldtype": "Column Break"
+  },
+  {
+   "description": "The business number this campaign sends from. Every step goes out from here.",
+   "fieldname": "whatsapp_account",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Send From",
+   "options": "WhatsApp Account",
+   "reqd": 1
+  },
+  {
+   "fieldname": "objective",
+   "fieldtype": "Small Text",
+   "label": "Objective"
+  },
+  {
+   "fieldname": "outreach_section",
+   "fieldtype": "Section Break",
+   "label": "First Touch"
+  },
+  {
+   "description": "Sent the moment a lead is enrolled. Template parameters are filled from the CRM Lead using the template's Field Names.",
+   "fieldname": "outreach_template",
+   "fieldtype": "Link",
+   "label": "Outreach Template",
+   "options": "WhatsApp Templates",
+   "reqd": 1
+  },
+  {
+   "fieldname": "audience_section",
+   "fieldtype": "Section Break",
+   "label": "Audience"
+  },
+  {
+   "default": "Manual",
+   "description": "Manual means you enroll leads yourself. Saved Filter enrolls every CRM Lead matching the filter below, once, when the campaign starts.",
+   "fieldname": "enroll_mode",
+   "fieldtype": "Select",
+   "label": "Enroll Mode",
+   "options": "Manual\nSaved Filter"
+  },
+  {
+   "depends_on": "eval:doc.enroll_mode=='Saved Filter'",
+   "description": "Filters on CRM Lead, e.g. {\"status\": \"New\", \"territory\": \"India\"}",
+   "fieldname": "audience_filter",
+   "fieldtype": "Code",
+   "label": "Audience Filter (JSON)",
+   "options": "JSON"
+  },
+  {
+   "fieldname": "schedule_section",
+   "fieldtype": "Section Break",
+   "label": "Schedule"
+  },
+  {
+   "description": "Leave blank to begin as soon as the campaign is started.",
+   "fieldname": "start_on",
+   "fieldtype": "Datetime",
+   "label": "Start On"
+  },
+  {
+   "description": "After this, nothing further is sent and open enrollments are closed.",
+   "fieldname": "end_on",
+   "fieldtype": "Datetime",
+   "label": "End On"
+  },
+  {
+   "fieldname": "column_break_schedule",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "Asia/Kolkata",
+   "description": "The audience's timezone. The send window below is read in this zone.",
+   "fieldname": "timezone",
+   "fieldtype": "Data",
+   "label": "Timezone"
+  },
+  {
+   "default": "09:00:00",
+   "description": "Steps that come due outside this window wait until it opens again.",
+   "fieldname": "send_window_start",
+   "fieldtype": "Time",
+   "label": "Send Window Start"
+  },
+  {
+   "default": "20:00:00",
+   "fieldname": "send_window_end",
+   "fieldtype": "Time",
+   "label": "Send Window End"
+  },
+  {
+   "fieldname": "journey_section",
+   "fieldtype": "Section Break",
+   "label": "Nudges"
+  },
+  {
+   "fieldname": "journey_html",
+   "fieldtype": "HTML",
+   "options": "<p class=\"text-muted small\">Steps run in order. Each waits the given number of hours after the previous one, then sends unless its condition says otherwise.</p>"
+  },
+  {
+   "fieldname": "steps",
+   "fieldtype": "Table",
+   "label": "Steps",
+   "options": "WhatsApp Campaign Step"
+  },
+  {
+   "fieldname": "exit_section",
+   "fieldtype": "Section Break",
+   "label": "Exit"
+  },
+  {
+   "description": "Stop nudging a contact once they reach one of these states. Opted-out contacts always exit, whether listed here or not.",
+   "fieldname": "exit_states",
+   "fieldtype": "Table MultiSelect",
+   "label": "Exit When State Is",
+   "options": "WhatsApp Campaign Exit State"
+  },
+  {
+   "fieldname": "metrics_section",
+   "fieldtype": "Section Break",
+   "label": "Metrics"
+  },
+  {
+   "default": "0",
+   "fieldname": "enrolled_count",
+   "fieldtype": "Int",
+   "label": "Enrolled",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "sent_count",
+   "fieldtype": "Int",
+   "label": "Messages Sent",
+   "read_only": 1
+  },
+  {
+   "fieldname": "column_break_metrics",
+   "fieldtype": "Column Break"
+  },
+  {
+   "default": "0",
+   "fieldname": "replied_count",
+   "fieldtype": "Int",
+   "label": "Replied",
+   "read_only": 1
+  },
+  {
+   "default": "0",
+   "fieldname": "exited_count",
+   "fieldtype": "Int",
+   "label": "Exited",
+   "read_only": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "links": [
+  {
+   "link_doctype": "WhatsApp Campaign Enrollment",
+   "link_fieldname": "campaign"
+  }
+ ],
+ "modified": "2026-08-24 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Msg91 Whatsapp",
+ "name": "WhatsApp Campaign",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": [],
+ "track_changes": 1
+}

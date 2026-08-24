@@ -1,6 +1,6 @@
 {
  "charts": [],
- "content": "[{\"id\":\"mw_hdr_funnel\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Funnel</b></span>\",\"col\":12}},{\"id\":\"mw_sc_rule\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"WhatsApp Lead Rule\",\"col\":3}},{\"id\":\"mw_sc_state\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"WhatsApp Lead State\",\"col\":3}},{\"id\":\"mw_sc_contact\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"WhatsApp Funnel Contact\",\"col\":3}},{\"id\":\"mw_sc_event\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"WhatsApp Funnel Event\",\"col\":3}},{\"id\":\"mw_spacer\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"mw_card_rules\",\"type\":\"card\",\"data\":{\"card_name\":\"Funnel Rules\",\"col\":4}},{\"id\":\"mw_card_activity\",\"type\":\"card\",\"data\":{\"card_name\":\"Activity\",\"col\":4}},{\"id\":\"mw_card_setup\",\"type\":\"card\",\"data\":{\"card_name\":\"Setup\",\"col\":4}}]",
+ "content": "[{\"id\": \"mw_hdr_funnel\", \"type\": \"header\", \"data\": {\"text\": \"<span class=\\\"h4\\\"><b>Funnel</b></span>\", \"col\": 12}}, {\"id\": \"mw_sc_campaign\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"WhatsApp Campaign\", \"col\": 3}}, {\"id\": \"mw_sc_rule\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"WhatsApp Lead Rule\", \"col\": 3}}, {\"id\": \"mw_sc_state\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"WhatsApp Lead State\", \"col\": 3}}, {\"id\": \"mw_sc_contact\", \"type\": \"shortcut\", \"data\": {\"shortcut_name\": \"WhatsApp Funnel Contact\", \"col\": 3}}, {\"id\": \"mw_spacer\", \"type\": \"spacer\", \"data\": {\"col\": 12}}, {\"id\": \"mw_card_campaigns\", \"type\": \"card\", \"data\": {\"card_name\": \"Campaigns\", \"col\": 4}}, {\"id\": \"mw_card_rules\", \"type\": \"card\", \"data\": {\"card_name\": \"Funnel Rules\", \"col\": 4}}, {\"id\": \"mw_card_activity\", \"type\": \"card\", \"data\": {\"card_name\": \"Activity\", \"col\": 4}}, {\"id\": \"mw_card_setup\", \"type\": \"card\", \"data\": {\"card_name\": \"Setup\", \"col\": 4}}]",
  "creation": "2026-08-24 00:00:00.000000",
  "custom_blocks": [],
  "docstatus": 0,
@@ -12,6 +12,36 @@
  "is_hidden": 0,
  "label": "Msg91 Whatsapp",
  "links": [
+  {
+   "description": "Who gets messaged, and the nudge sequence they get.",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Campaigns",
+   "link_count": 2,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "WhatsApp Campaign",
+   "link_count": 0,
+   "link_to": "WhatsApp Campaign",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "WhatsApp Campaign Enrollment",
+   "link_count": 0,
+   "link_to": "WhatsApp Campaign Enrollment",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
   {
    "description": "Define what a lead state means and what earns it.",
    "hidden": 0,
@@ -136,6 +166,13 @@
  "roles": [],
  "sequence_id": 20.0,
  "shortcuts": [
+  {
+   "color": "Orange",
+   "doc_view": "List",
+   "label": "WhatsApp Campaign",
+   "link_to": "WhatsApp Campaign",
+   "type": "DocType"
+  },
   {
    "color": "Blue",
    "doc_view": "List",
