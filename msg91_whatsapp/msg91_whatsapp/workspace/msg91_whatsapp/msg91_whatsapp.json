@@ -1,0 +1,169 @@
+{
+ "charts": [],
+ "content": "[{\"id\":\"mw_hdr_funnel\",\"type\":\"header\",\"data\":{\"text\":\"<span class=\\\"h4\\\"><b>Funnel</b></span>\",\"col\":12}},{\"id\":\"mw_sc_rule\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"WhatsApp Lead Rule\",\"col\":3}},{\"id\":\"mw_sc_state\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"WhatsApp Lead State\",\"col\":3}},{\"id\":\"mw_sc_contact\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"WhatsApp Funnel Contact\",\"col\":3}},{\"id\":\"mw_sc_event\",\"type\":\"shortcut\",\"data\":{\"shortcut_name\":\"WhatsApp Funnel Event\",\"col\":3}},{\"id\":\"mw_spacer\",\"type\":\"spacer\",\"data\":{\"col\":12}},{\"id\":\"mw_card_rules\",\"type\":\"card\",\"data\":{\"card_name\":\"Funnel Rules\",\"col\":4}},{\"id\":\"mw_card_activity\",\"type\":\"card\",\"data\":{\"card_name\":\"Activity\",\"col\":4}},{\"id\":\"mw_card_setup\",\"type\":\"card\",\"data\":{\"card_name\":\"Setup\",\"col\":4}}]",
+ "creation": "2026-08-24 00:00:00.000000",
+ "custom_blocks": [],
+ "docstatus": 0,
+ "doctype": "Workspace",
+ "for_user": "",
+ "hide_custom": 0,
+ "icon": "message",
+ "idx": 0,
+ "is_hidden": 0,
+ "label": "Msg91 Whatsapp",
+ "links": [
+  {
+   "description": "Define what a lead state means and what earns it.",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Funnel Rules",
+   "link_count": 2,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "WhatsApp Lead Rule",
+   "link_count": 0,
+   "link_to": "WhatsApp Lead Rule",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "WhatsApp Lead State",
+   "link_count": 0,
+   "link_to": "WhatsApp Lead State",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "description": "What has actually happened, per contact.",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Activity",
+   "link_count": 3,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "WhatsApp Funnel Contact",
+   "link_count": 0,
+   "link_to": "WhatsApp Funnel Contact",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "WhatsApp Funnel Event",
+   "link_count": 0,
+   "link_to": "WhatsApp Funnel Event",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "WhatsApp Session",
+   "link_count": 0,
+   "link_to": "WhatsApp Session",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "description": "Connection to MSG91 and the delivery report webhook.",
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "Setup",
+   "link_count": 3,
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Card Break"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "MSG91 Settings",
+   "link_count": 0,
+   "link_to": "MSG91 Settings",
+   "link_type": "DocType",
+   "onboard": 1,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "WhatsApp Account",
+   "link_count": 0,
+   "link_to": "WhatsApp Account",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  },
+  {
+   "hidden": 0,
+   "is_query_report": 0,
+   "label": "WhatsApp Templates",
+   "link_count": 0,
+   "link_to": "WhatsApp Templates",
+   "link_type": "DocType",
+   "onboard": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-08-24 00:00:00.000000",
+ "modified_by": "Administrator",
+ "module": "Msg91 Whatsapp",
+ "name": "Msg91 Whatsapp",
+ "number_cards": [],
+ "owner": "Administrator",
+ "parent_page": "",
+ "public": 1,
+ "quick_lists": [],
+ "restrict_to_domain": "",
+ "roles": [],
+ "sequence_id": 20.0,
+ "shortcuts": [
+  {
+   "color": "Blue",
+   "doc_view": "List",
+   "label": "WhatsApp Lead Rule",
+   "link_to": "WhatsApp Lead Rule",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "WhatsApp Lead State",
+   "link_to": "WhatsApp Lead State",
+   "type": "DocType"
+  },
+  {
+   "color": "Green",
+   "doc_view": "List",
+   "label": "WhatsApp Funnel Contact",
+   "link_to": "WhatsApp Funnel Contact",
+   "type": "DocType"
+  },
+  {
+   "color": "Grey",
+   "doc_view": "List",
+   "label": "WhatsApp Funnel Event",
+   "link_to": "WhatsApp Funnel Event",
+   "type": "DocType"
+  }
+ ],
+ "title": "Msg91 Whatsapp"
+}
