@@ -13,7 +13,14 @@ STATES = [
     {"state_name": "Outreach Seen", "rank": 20, "min_score": 10},
     {"state_name": "Interacted", "rank": 30, "min_score": 30},
     {"state_name": "Warm Lead", "rank": 40, "min_score": 60, "allow_regression": 1},
-    {"state_name": "Hot Lead", "rank": 50, "min_score": 100, "allow_regression": 1},
+    {
+        "state_name": "Hot Lead",
+        "rank": 50,
+        "min_score": 100,
+        "allow_regression": 1,
+        "notify_on_entry": 1,
+        "handoff_note": "Hot on WhatsApp. Call them.",
+    },
     {"state_name": "Opted Out", "rank": 90, "is_terminal": 1},
     {"state_name": "Converted", "rank": 100, "is_terminal": 1},
 ]

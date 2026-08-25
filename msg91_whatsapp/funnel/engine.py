@@ -43,6 +43,7 @@ def evaluate(contact, save=True):
         contact.save(ignore_permissions=True)
         if changed:
             mirror_to_lead(contact)
+            hand_off(contact)
 
     return {"score": score, "state": state, "changed": changed, "breakdown": breakdown}
 
@@ -213,6 +214,43 @@ def mirror_to_lead(contact):
         lead.save(ignore_permissions=True)
 
 
+def hand_off(contact):
+    """Put a hot lead in front of a person.
+
+    A state nobody looks at is just a label. When a state is marked Assign On
+    Entry, the matched CRM Lead is assigned so it lands in someone's queue the
+    moment the contact qualifies.
+    """
+    if not contact.state or not contact.get("lead"):
+        return
+
+    state = frappe.get_cached_doc("WhatsApp Lead State", contact.state)
+    if not state.notify_on_entry:
+        return
+
+    owner = state.assign_to or frappe.db.get_value("CRM Lead", contact.lead, "lead_owner")
+    if not owner:
+        return
+
+    from frappe.desk.form.assign_to import add as assign
+
+    note = state.handoff_note or f"WhatsApp funnel: reached {contact.state}"
+    try:
+        assign(
+            {
+                "assign_to": [owner],
+                "doctype": "CRM Lead",
+                "name": contact.lead,
+                "description": f"{note} (score {cint(contact.score)})",
+            }
+        )
+    except frappe.ValidationError:
+        # Already assigned to them; that is the desired end state anyway.
+        pass
+    except Exception:
+        frappe.log_error(frappe.get_traceback(), "MSG91: handoff assignment failed")
+
+
 def evaluate_phone(phone):
     """Convenience entry point for the event recorder and the scheduler."""
     from msg91_whatsapp.funnel import contacts
@@ -224,10 +262,40 @@ def evaluate_phone(phone):
 
 
 def sweep():
-    """Scheduled re-evaluation. Time-based rules have no event to ride in on."""
-    for name in frappe.get_all("WhatsApp Funnel Contact", pluck="name"):
+    """Scheduled re-evaluation. Time-based rules have no event to ride in on.
+
+    Everything else is already re-scored the moment its event lands, so if no
+    schedule rule exists there is nothing here a sweep could discover, and
+    replaying the whole book every hour would be pure cost.
+    """
+    if not active_rules(trigger="On Schedule"):
+        return
+
+    for index, name in enumerate(_sweepable(), start=1):
         try:
             evaluate(frappe.get_doc("WhatsApp Funnel Contact", name))
         except Exception:
             frappe.log_error(frappe.get_traceback(), f"MSG91: funnel sweep failed for {name}")
-        frappe.db.commit()
+
+        # Commit in batches. Per-contact commits make a large book crawl.
+        if index % 50 == 0:
+            frappe.db.commit()
+
+    frappe.db.commit()
+
+
+def _sweepable():
+    """Everyone except those already parked in a terminal state."""
+    terminal = [state.name for state in by_rank() if state.is_terminal]
+    if not terminal:
+        return frappe.get_all("WhatsApp Funnel Contact", pluck="name")
+
+    placeholders = ", ".join(["%s"] * len(terminal))
+    return frappe.db.sql_list(
+        f"""
+        select name
+        from `tabWhatsApp Funnel Contact`
+        where ifnull(state, '') not in ({placeholders})
+        """,
+        terminal,
+    )

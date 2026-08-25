@@ -15,6 +15,8 @@ from zoneinfo import ZoneInfo
 
 import frappe
 from frappe.utils import add_to_date, cint, get_datetime, get_time, now_datetime
+from frappe.utils.file_lock import LockTimeoutError
+from frappe.utils.synchronization import filelock
 
 from msg91_whatsapp.funnel import contacts
 from msg91_whatsapp.utils import normalize_phone
@@ -101,7 +103,21 @@ def _start_time(campaign_doc):
 # --------------------------------------------------------------------------
 
 def run():
-    """Scheduled entry point. Walks every active campaign's due enrollments."""
+    """Scheduled entry point. Walks every active campaign's due enrollments.
+
+    Single-flight. A slow run must never overlap the next tick, because two
+    workers holding the same enrollment would each send its step, and the
+    customer would get the same nudge twice.
+    """
+    try:
+        with filelock("msg91_campaign_runner", timeout=1):
+            _run()
+    except LockTimeoutError:
+        # The previous tick is still going. Nothing to do; it will catch up.
+        return
+
+
+def _run():
     for name in frappe.get_all(
         "WhatsApp Campaign",
         filters={"status": "Active"},
@@ -250,10 +266,109 @@ def _bump(campaign, field, by=1):
 
 
 # --------------------------------------------------------------------------
+# template checks
+# --------------------------------------------------------------------------
+
+def template_problems(template):
+    """Why this template would send the wrong thing, in plain words.
+
+    frappe_whatsapp fills a template's placeholders by reading `field_names`
+    off the template and pulling those fields from the referenced CRM Lead. Get
+    that wrong and nothing errors: the message goes out with blanks or with the
+    wrong value in it, and you find out from a customer. So it is checked before
+    a campaign is allowed to start rather than at send time.
+    """
+    if not template:
+        return ["No template selected."]
+
+    if not frappe.db.exists("WhatsApp Templates", template):
+        return [f"Template {template} no longer exists."]
+
+    doc = frappe.get_cached_doc("WhatsApp Templates", template)
+    if not doc.sample_values:
+        # No placeholders, so there is nothing to fill in and nothing to break.
+        return []
+
+    problems = []
+    if not doc.field_names:
+        return [
+            f"{template}: has placeholders but no Field Names, so it would send "
+            "its sample values instead of real lead data. Set Field Names on the "
+            "template."
+        ]
+
+    meta = frappe.get_meta("CRM Lead")
+    unknown = [
+        field.strip()
+        for field in doc.field_names.split(",")
+        if field.strip() and not meta.has_field(field.strip())
+    ]
+    if unknown:
+        problems.append(
+            f"{template}: Field Names refer to fields that do not exist on CRM Lead: "
+            + ", ".join(unknown)
+        )
+
+    expected = len([v for v in doc.sample_values.split(",") if v.strip()])
+    actual = len([f for f in doc.field_names.split(",") if f.strip()])
+    if expected != actual:
+        problems.append(
+            f"{template}: has {expected} placeholder(s) but {actual} field name(s), "
+            "so the values would land in the wrong slots."
+        )
+
+    return problems
+
+
+def campaign_problems(campaign_doc):
+    """Everything that would make this campaign misbehave once started."""
+    problems = list(template_problems(campaign_doc.outreach_template))
+
+    for index, step in enumerate(campaign_doc.steps, start=1):
+        if not step.enabled:
+            continue
+        label = step.step_name or f"Step {index}"
+        problems += [f"{label} - {problem}" for problem in template_problems(step.template)]
+
+    if not campaign_doc.whatsapp_account:
+        problems.append("No sending number chosen.")
+    elif not frappe.db.get_value(
+        "WhatsApp Account", campaign_doc.whatsapp_account, "msg91_integrated_number"
+    ):
+        problems.append(
+            f"{campaign_doc.whatsapp_account} has no MSG91 Integrated Number, so nothing can send from it."
+        )
+
+    return problems
+
+
+# --------------------------------------------------------------------------
 # sending
 # --------------------------------------------------------------------------
 
-def _send(campaign_doc, enrollment, template):
+def send_test(campaign, lead):
+    """Send the outreach template to one lead, without enrolling anyone.
+
+    The whole chain end to end: template, personalisation, MSG91, the event log.
+    Worth doing once before pointing a campaign at a real audience.
+    """
+    campaign_doc = frappe.get_doc("WhatsApp Campaign", campaign)
+
+    problems = campaign_problems(campaign_doc)
+    if problems:
+        frappe.throw("<br>".join(problems), title="Fix these first")
+
+    phone = normalize_phone(_phone_for_lead(lead))
+    if not phone:
+        frappe.throw(f"{lead} has no mobile or phone number.")
+
+    probe = frappe._dict({"phone": phone, "lead": lead, "campaign": campaign})
+    if not _send(campaign_doc, probe, campaign_doc.outreach_template, is_test=True):
+        frappe.throw("The test message could not be sent. Check the error log.")
+
+    return phone
+
+def _send(campaign_doc, enrollment, template, is_test=False):
     """Every campaign message is an approved template, so it is legal whether or
     not the 24h window happens to be open. A free-form nudge would fail on day
     three of a sequence, which is exactly when the sequence needs to work.
@@ -266,6 +381,8 @@ def _send(campaign_doc, enrollment, template):
 
     reference_doctype, reference_name = _reference_for(enrollment)
     if not reference_name:
+        if is_test:
+            return False
         _exit(enrollment, "No CRM Lead to personalise from")
         return False
 
@@ -294,6 +411,10 @@ def _send(campaign_doc, enrollment, template):
     finally:
         frappe.flags.msg91_whatsapp_account = previous_account
         frappe.flags.msg91_campaign = previous_campaign
+
+    if is_test:
+        # A test must not move the journey or inflate the campaign's numbers.
+        return True
 
     enrollment.status = "Active"
     enrollment.nudges_sent = cint(enrollment.nudges_sent) + 1

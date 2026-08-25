@@ -10,10 +10,33 @@ from frappe.model.document import Document
 from msg91_whatsapp.funnel import campaigns
 
 
+def _describe(hours):
+    """Cumulative offsets read better as days once they get big."""
+    if hours < 1:
+        return "immediately"
+    if hours < 48:
+        return f"{hours:g}h after enrolment"
+    days = hours / 24
+    return f"day {days:g} ({hours:g}h)"
+
+
 class WhatsAppCampaign(Document):
     def validate(self):
         self._validate_steps()
         self._validate_audience()
+        self._warn_about_problems()
+
+    def _warn_about_problems(self):
+        """Say it on save, so it is not a surprise at Start."""
+        if self.status == "Active":
+            return
+        problems = campaigns.campaign_problems(self)
+        if problems:
+            frappe.msgprint(
+                "<ul>" + "".join(f"<li>{p}</li>" for p in problems) + "</ul>",
+                title="This campaign cannot start yet",
+                indicator="orange",
+            )
 
     def _validate_steps(self):
         for index, step in enumerate(self.steps, start=1):
@@ -43,6 +66,13 @@ class WhatsAppCampaign(Document):
         """Enrol the audience and let the runner take over."""
         if self.status == "Active":
             frappe.throw("This campaign is already running.")
+
+        problems = campaigns.campaign_problems(self)
+        if problems:
+            frappe.throw(
+                "<ul>" + "".join(f"<li>{p}</li>" for p in problems) + "</ul>",
+                title="Fix these before starting",
+            )
 
         if not self.steps:
             frappe.msgprint(
@@ -79,6 +109,32 @@ class WhatsAppCampaign(Document):
                 "opted out, or the lead has no phone number."
             )
         return enrollment.name
+
+    @frappe.whitelist()
+    def test_send(self, lead):
+        """Send the first touch to one lead, changing nothing else."""
+        return campaigns.send_test(self.name, lead)
+
+    @frappe.whitelist()
+    def timeline(self):
+        """When each step actually lands, counted from enrolment."""
+        rows, offset = [], 0.0
+        rows.append(
+            {"step": "First touch", "template": self.outreach_template, "after": "immediately"}
+        )
+        for index, step in enumerate(self.steps, start=1):
+            if not step.enabled:
+                continue
+            offset += step.delay_hours or 0
+            rows.append(
+                {
+                    "step": step.step_name or f"Step {index}",
+                    "template": step.template,
+                    "after": _describe(offset),
+                    "condition": step.send_if,
+                }
+            )
+        return rows
 
     @frappe.whitelist()
     def preview_audience(self):

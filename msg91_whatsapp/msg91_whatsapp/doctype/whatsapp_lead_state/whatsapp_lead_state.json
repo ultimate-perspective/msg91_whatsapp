@@ -14,6 +14,10 @@
   "min_score",
   "is_terminal",
   "allow_regression",
+  "handoff_section",
+  "notify_on_entry",
+  "assign_to",
+  "handoff_note",
   "crm_section",
   "maps_to_status",
   "column_break_crm",
@@ -72,6 +76,33 @@
    "fieldname": "allow_regression",
    "fieldtype": "Check",
    "label": "Allow Regression"
+  },
+  {
+   "fieldname": "handoff_section",
+   "fieldtype": "Section Break",
+   "label": "Human Handoff"
+  },
+  {
+   "default": "0",
+   "description": "Assign the matched CRM Lead to someone the moment a contact reaches this state. This is how a hot lead reaches a person instead of sitting in a list.",
+   "fieldname": "notify_on_entry",
+   "fieldtype": "Check",
+   "label": "Assign On Entry"
+  },
+  {
+   "depends_on": "notify_on_entry",
+   "description": "Leave blank to assign to the lead's owner.",
+   "fieldname": "assign_to",
+   "fieldtype": "Link",
+   "label": "Assign To",
+   "options": "User"
+  },
+  {
+   "depends_on": "notify_on_entry",
+   "description": "Shown on the assignment, e.g. \"Asked about pricing on WhatsApp, call today\".",
+   "fieldname": "handoff_note",
+   "fieldtype": "Small Text",
+   "label": "Note"
   },
   {
    "fieldname": "crm_section",

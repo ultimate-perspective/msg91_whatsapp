@@ -26,6 +26,7 @@ def by_rank(enabled_only=True):
             "allow_regression",
             "maps_to_status",
             "maps_to_lost_reason",
+            "notify_on_entry",
         ],
         order_by="rank asc",
     )

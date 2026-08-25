@@ -54,6 +54,9 @@ highest-ranked state whose minimum score they have reached.
   rules work. Nothing fires an event when a lead goes quiet.
 - **Terminal states** (Opted Out, Converted, Lost) are set by a rule's *Set
   State*, never by score, and nothing moves out of them automatically.
+- **Assign On Entry** hands the lead to a person the moment they reach a state.
+  Hot Lead ships with this on: scoring is pointless if nobody picks up the
+  phone.
 - **Regression** is off by default. A contact only falls back to a lower state if
   the state they are in has *Allow Regression* ticked.
 
@@ -101,6 +104,22 @@ campaign for reporting, and score globally. Global state gates the campaign, via
 
 Opted-out contacts always exit, whether or not you list Opted Out there.
 
+### Before you point one at a real audience
+
+Save the campaign and it tells you, in plain words, anything that would make it
+misbehave: a template whose Field Names do not resolve against CRM Lead, a
+placeholder count that does not match, a sending number with no MSG91
+integrated number. Start Campaign refuses outright while any of those stand.
+This matters because a bad Field Names setting does not error at send time, it
+quietly ships a message with blanks in it.
+
+**Send Test Message** puts the first touch through the whole chain (template,
+personalisation, MSG91, event log) for one lead, without enrolling anyone or
+moving any counter. Do this once per campaign.
+
+The **Nudges** section shows when each step actually lands, counted from
+enrolment, so you are not adding up delays in your head.
+
 ### What is deliberately not here
 
 There is no global send cap. Campaigns are the only sender, so a contact
@@ -122,9 +141,9 @@ if it ever becomes one.
    and rewrite them for your funnel. They are a starting point, not a default.
 6. Turn on *Auto Write Lead Status* once the states look right, if you want the
    CRM Lead status to follow.
-7. Build a **WhatsApp Campaign**, add steps, then press *Start Campaign*. Until
-   a campaign is started, the app records signals and scores contacts but sends
-   nothing on its own.
+7. Build a **WhatsApp Campaign**, add steps, *Send Test Message* to yourself,
+   then press *Start Campaign*. Until a campaign is started, the app records
+   signals and scores contacts but sends nothing on its own.
 
 ## MSG91 endpoints
 

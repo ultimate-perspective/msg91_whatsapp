@@ -4,3 +4,4 @@
 msg91_whatsapp.patches.add_msg91_account_fields
 msg91_whatsapp.patches.add_msg91_message_fields
 msg91_whatsapp.patches.seed_funnel_defaults
+msg91_whatsapp.patches.enable_hot_lead_handoff
