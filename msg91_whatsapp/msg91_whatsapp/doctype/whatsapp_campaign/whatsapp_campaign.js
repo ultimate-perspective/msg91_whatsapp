@@ -90,7 +90,7 @@ function render_timeline(frm) {
     if (!wrapper) return;
 
     const intro = `<p class="text-muted small">${__(
-        "Steps run in order. Each waits the given number of hours after the previous one, then sends unless its condition says otherwise."
+        "Steps run in order. Each waits its own Wait/Unit after the previous one, then sends unless its condition says otherwise."
     )}</p>`;
 
     const steps = (frm.doc.steps || []).filter((s) => s.enabled);
@@ -98,7 +98,7 @@ function render_timeline(frm) {
         wrapper.$wrapper.html(
             intro +
                 `<p class="text-muted small">${__(
-                    "No nudges yet. The outreach template goes out on enrolment and the journey ends there."
+                    "No nudges yet. Press Add row below to write one."
                 )}</p>`
         );
         return;

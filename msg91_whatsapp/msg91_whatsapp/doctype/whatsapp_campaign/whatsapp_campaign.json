@@ -166,7 +166,7 @@
   {
    "fieldname": "journey_html",
    "fieldtype": "HTML",
-   "options": "<p class=\"text-muted small\">Steps run in order. Each waits the given number of hours after the previous one, then sends unless its condition says otherwise.</p>"
+   "options": "<p class=\"text-muted small\">Steps run in order. Each waits its own Wait/Unit after the previous one, then sends unless its condition says otherwise.</p>"
   },
   {
    "fieldname": "steps",
