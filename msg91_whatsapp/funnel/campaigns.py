@@ -14,16 +14,28 @@ from datetime import timedelta
 from zoneinfo import ZoneInfo
 
 import frappe
-from frappe.utils import add_to_date, cint, get_datetime, get_time, now_datetime
+from frappe.utils import add_to_date, cint, flt, get_datetime, get_time, now_datetime
 from frappe.utils.file_lock import LockTimeoutError
 from frappe.utils.synchronization import filelock
 
 from msg91_whatsapp.funnel import contacts
+from msg91_whatsapp.msg91_whatsapp.doctype.whatsapp_lead_state.whatsapp_lead_state import (
+    by_rank,
+)
+from msg91_whatsapp.msg91_whatsapp.doctype.whatsapp_session.whatsapp_session import (
+    get_active_account,
+    is_window_open,
+)
 from msg91_whatsapp.utils import normalize_phone
 
 ENROLLMENT = "WhatsApp Campaign Enrollment"
 OPEN_STATUSES = ("Queued", "Active", "Waiting")
 BATCH_SIZE = 200
+
+# What a delivery attempt did, which decides whether the journey moves on.
+SENT = "sent"
+SKIPPED = "skipped"
+EXITED = "exited"
 
 
 # --------------------------------------------------------------------------
@@ -57,6 +69,7 @@ def enroll(campaign, lead=None, phone=None):
             "lead": lead or contact.get("lead"),
             "status": "Queued",
             "entered_at": now_datetime(),
+            "entry_state": contact.get("state"),
             "next_action_at": _start_time(campaign_doc),
         }
     )
@@ -82,6 +95,63 @@ def enroll_audience(campaign):
     enrolled = 0
     for lead in frappe.get_all("CRM Lead", filters=filters, pluck="name"):
         if enroll(campaign, lead=lead):
+            enrolled += 1
+    return enrolled
+
+
+def enroll_on_state(contact):
+    """Enrol into every live campaign that is waiting for this state.
+
+    Called from the rule engine the moment a contact changes state, so the wait
+    starts from the customer's own action rather than from the next sweep. This
+    is what makes a campaign continuous: `Saved Filter` collects its audience
+    once, at Start, and never looks again.
+    """
+    if not contact.state or contact.opted_out:
+        return []
+
+    campaigns = frappe.get_all(
+        "WhatsApp Campaign",
+        filters={
+            "status": "Active",
+            "enroll_mode": "On Entering State",
+            "enroll_on_state": contact.state,
+        },
+        order_by="priority asc",
+        pluck="name",
+    )
+
+    enrolled = []
+    for campaign in campaigns:
+        try:
+            if enroll(campaign, phone=contact.phone):
+                enrolled.append(campaign)
+        except Exception:
+            frappe.log_error(
+                frappe.get_traceback(), f"MSG91: auto-enrol failed for {campaign}"
+            )
+    return enrolled
+
+
+def enroll_current_state(campaign):
+    """Back-fill: enrol everyone sitting in the campaign's trigger state today.
+
+    Auto-enrolment fires on entering a state, so people who were already there
+    when the campaign started are not swept up. Usually that is what you want —
+    their 24h window shut long ago and a free-form nudge would be skipped — so
+    this is a button rather than something Start does on its own.
+    """
+    campaign_doc = frappe.get_cached_doc("WhatsApp Campaign", campaign)
+    if not campaign_doc.enroll_on_state:
+        return 0
+
+    enrolled = 0
+    for phone in frappe.get_all(
+        contacts.DOCTYPE,
+        filters={"state": campaign_doc.enroll_on_state, "opted_out": 0},
+        pluck="phone",
+    ):
+        if enroll(campaign, phone=phone):
             enrolled += 1
     return enrolled
 
@@ -131,6 +201,21 @@ def _run():
         frappe.db.commit()
 
 
+def run_now(campaign):
+    """Process one campaign's due enrollments immediately.
+
+    Shares the runner's lock rather than going around it, so pressing this while
+    the scheduled tick is mid-flight waits its turn instead of sending the same
+    nudge twice.
+    """
+    try:
+        with filelock("msg91_campaign_runner", timeout=30):
+            run_campaign(campaign)
+            frappe.db.commit()
+    except LockTimeoutError:
+        frappe.throw("The scheduled run is busy right now. Try again in a moment.")
+
+
 def run_campaign(campaign):
     campaign_doc = frappe.get_doc("WhatsApp Campaign", campaign)
 
@@ -160,7 +245,7 @@ def run_campaign(campaign):
 def _process(enrollment, campaign_doc):
     contact = frappe.get_doc("WhatsApp Funnel Contact", enrollment.contact)
 
-    reason = _exit_reason(contact, campaign_doc)
+    reason = _exit_reason(contact, campaign_doc, enrollment)
     if reason:
         _exit(enrollment, reason)
         return
@@ -168,8 +253,11 @@ def _process(enrollment, campaign_doc):
     steps = [step for step in campaign_doc.steps if step.enabled]
 
     if enrollment.status == "Queued":
-        if not _send(campaign_doc, enrollment, campaign_doc.outreach_template):
-            return
+        # No first touch means this campaign only runs the follow-up, so the
+        # clock starts without anything being said.
+        if campaign_doc.outreach_template:
+            if _send_template(campaign_doc, enrollment, campaign_doc.outreach_template) == EXITED:
+                return
         _schedule_next(enrollment, campaign_doc, steps, step_index=0)
         return
 
@@ -180,7 +268,7 @@ def _process(enrollment, campaign_doc):
 
     step = steps[index]
     if _should_send(step, enrollment, contact):
-        if not _send(campaign_doc, enrollment, step.template):
+        if _deliver(campaign_doc, enrollment, step, contact) == EXITED:
             return
 
     # A skipped step still advances. Otherwise the journey stalls forever on a
@@ -188,7 +276,7 @@ def _process(enrollment, campaign_doc):
     _schedule_next(enrollment, campaign_doc, steps, step_index=index + 1)
 
 
-def _exit_reason(contact, campaign_doc):
+def _exit_reason(contact, campaign_doc, enrollment=None):
     """Opt-out is absolute. Everything else is the campaign's own choice."""
     if contact.opted_out:
         return "Opted out"
@@ -197,7 +285,28 @@ def _exit_reason(contact, campaign_doc):
     if contact.state and contact.state in exit_states:
         return f"Reached state {contact.state}"
 
+    if enrollment is not None and campaign_doc.exit_on_advance:
+        entry = enrollment.get("entry_state") or campaign_doc.enroll_on_state
+        if _has_advanced(contact.state, entry):
+            return f"Moved on to {contact.state}"
+
     return None
+
+
+def _has_advanced(state, entry_state):
+    """True once the contact ranks above the level that enrolled them.
+
+    This is what keeps a person hearing only the nudge written for where they
+    actually are. Someone who taps through to a deeper step should fall silent
+    on the shallower sequence rather than receive both.
+    """
+    if not state or not entry_state or state == entry_state:
+        return False
+
+    ranks = {row.name: cint(row.rank) for row in by_rank(enabled_only=False)}
+    if state not in ranks or entry_state not in ranks:
+        return False
+    return ranks[state] > ranks[entry_state]
 
 
 def _should_send(step, enrollment, contact):
@@ -219,13 +328,25 @@ def _should_send(step, enrollment, contact):
     return True
 
 
+def delay_in_hours(step):
+    """A step's wait, whichever unit it was authored in.
+
+    Minutes exist so a sequence can be rehearsed end to end in a few minutes
+    instead of a few hours. Everything downstream works in hours.
+    """
+    value = flt(step.delay)
+    if (step.delay_unit or "Hours") == "Minutes":
+        return value / 60.0
+    return value
+
+
 def _schedule_next(enrollment, campaign_doc, steps, step_index):
     if step_index >= len(steps):
         enrollment.current_step = step_index
         _complete(enrollment)
         return
 
-    due = add_to_date(now_datetime(), hours=steps[step_index].delay_hours or 0)
+    due = add_to_date(now_datetime(), hours=delay_in_hours(steps[step_index]))
     enrollment.current_step = step_index
     enrollment.next_action_at = clamp_to_window(due, campaign_doc)
     enrollment.status = "Waiting"
@@ -320,15 +441,51 @@ def template_problems(template):
     return problems
 
 
+def step_problems(step):
+    """A step's own way of being wrong, which differs by how it sends."""
+    if (step.message_type or "Template") != "Free Form":
+        return template_problems(step.template)
+
+    problems = []
+    if not (step.message_text or "").strip():
+        problems.append("is free-form but has no message text.")
+
+    if step.if_window_closed == "Send Template Instead":
+        if not step.fallback_template:
+            problems.append(
+                "falls back to a template when the window is closed, but no fallback template is set."
+            )
+        else:
+            problems += template_problems(step.fallback_template)
+
+    return problems
+
+
 def campaign_problems(campaign_doc):
     """Everything that would make this campaign misbehave once started."""
-    problems = list(template_problems(campaign_doc.outreach_template))
+    problems = []
+
+    # An empty first touch is a choice, not a mistake: it means the opening
+    # message went out elsewhere and this campaign only runs the follow-up.
+    if campaign_doc.outreach_template:
+        problems += template_problems(campaign_doc.outreach_template)
+
+    enabled_steps = [step for step in campaign_doc.steps if step.enabled]
+    if not campaign_doc.outreach_template and not enabled_steps:
+        problems.append(
+            "Nothing to send: there is no first touch and no enabled steps."
+        )
 
     for index, step in enumerate(campaign_doc.steps, start=1):
         if not step.enabled:
             continue
         label = step.step_name or f"Step {index}"
-        problems += [f"{label} - {problem}" for problem in template_problems(step.template)]
+        problems += [f"{label} - {problem}" for problem in step_problems(step)]
+
+    if campaign_doc.enroll_mode == "On Entering State" and not campaign_doc.enroll_on_state:
+        problems.append(
+            "Enrolment is set to On Entering State but no state is chosen, so nobody would ever join."
+        )
 
     if not campaign_doc.whatsapp_account:
         problems.append("No sending number chosen.")
@@ -363,28 +520,101 @@ def send_test(campaign, lead):
         frappe.throw(f"{lead} has no mobile or phone number.")
 
     probe = frappe._dict({"phone": phone, "lead": lead, "campaign": campaign})
-    if not _send(campaign_doc, probe, campaign_doc.outreach_template, is_test=True):
+
+    if campaign_doc.outreach_template:
+        if _send_template(campaign_doc, probe, campaign_doc.outreach_template, is_test=True) != SENT:
+            frappe.throw("The test message could not be sent. Check the error log.")
+        return phone
+
+    # No first touch, so the thing worth testing is the first nudge.
+    step = next((s for s in campaign_doc.steps if s.enabled), None)
+    if not step:
+        frappe.throw("This campaign has nothing to send.")
+
+    if (step.message_type or "Template") != "Free Form":
+        if _send_template(campaign_doc, probe, step.template, is_test=True) != SENT:
+            frappe.throw("The test message could not be sent. Check the error log.")
+        return phone
+
+    account = _open_window_account(phone, campaign_doc)
+    if not account:
+        frappe.throw(
+            f"The 24-hour window for {phone} is closed, so this free-form step "
+            "cannot be tested right now. Message the business number from that "
+            "handset and try again."
+        )
+
+    contact = contacts.get_or_create(phone)
+    if not contact.name or not frappe.db.exists(contacts.DOCTYPE, contact.name):
+        contact.insert(ignore_permissions=True)
+
+    if _send_freeform(campaign_doc, probe, step, contact, account, is_test=True) != SENT:
         frappe.throw("The test message could not be sent. Check the error log.")
 
     return phone
 
-def _send(campaign_doc, enrollment, template, is_test=False):
-    """Every campaign message is an approved template, so it is legal whether or
-    not the 24h window happens to be open. A free-form nudge would fail on day
-    three of a sequence, which is exactly when the sequence needs to work.
+def _deliver(campaign_doc, enrollment, step, contact):
+    """Send one step, whichever way it is configured to go out."""
+    if (step.message_type or "Template") != "Free Form":
+        return _send_template(campaign_doc, enrollment, step.template)
 
-    Returns False when the enrollment was closed instead of messaged, in which
+    account = _open_window_account(enrollment.phone, campaign_doc)
+    if account:
+        return _send_freeform(campaign_doc, enrollment, step, contact, account)
+
+    # The window shut before the step came due. What that means is the user's
+    # call, because "they went quiet" and "they are still listening" deserve
+    # different answers.
+    policy = step.if_window_closed or "Skip Step"
+    if policy == "Send Template Instead" and step.fallback_template:
+        return _send_template(
+            campaign_doc, enrollment, step.fallback_template, is_fallback=True
+        )
+    if policy == "Exit Campaign":
+        _exit(enrollment, "24h window closed")
+        return EXITED
+    return SKIPPED
+
+
+def _open_window_account(phone, campaign_doc):
+    """A business number whose 24h window with this customer is still open.
+
+    The window belongs to a pair of numbers, not to a person, so the campaign's
+    own number is tried first and the number they are actually talking to is
+    the fallback.
+    """
+    chosen = campaign_doc.whatsapp_account
+    if chosen and is_window_open(phone, chosen):
+        return chosen
+
+    active = get_active_account(phone)
+    if active and active != chosen and is_window_open(phone, active):
+        return active
+
+    return None
+
+
+def _send_template(campaign_doc, enrollment, template, is_test=False, is_fallback=False):
+    """An approved template, which is legal whether or not the window is open.
+
+    Returns EXITED when the enrollment was closed instead of messaged, in which
     case the caller must not go on to schedule anything.
     """
     if not template:
-        return False
+        return SKIPPED
 
     reference_doctype, reference_name = _reference_for(enrollment)
     if not reference_name:
-        if is_test:
-            return False
+        # A template is personalised from the lead record, so without one it
+        # would ship with blanks where the name should be.
+        if is_test or is_fallback:
+            # A fallback is best-effort: it stands in for a free-form nudge that
+            # could not be delivered. Ending the journey over it would also kill
+            # the later steps, which may well land if the customer writes back
+            # and reopens the window.
+            return SKIPPED
         _exit(enrollment, "No CRM Lead to personalise from")
-        return False
+        return EXITED
 
     message = frappe.new_doc("WhatsApp Message")
     message.update(
@@ -400,27 +630,129 @@ def _send(campaign_doc, enrollment, template, is_test=False):
         }
     )
 
-    # Inserting is what sends, so the account and the campaign tag have to be in
-    # place beforehand. The override and the event recorder read them off flags.
+    if not _insert_send(message, campaign_doc, campaign_doc.whatsapp_account, enrollment):
+        return SKIPPED
+
+    if is_test:
+        # A test must not move the journey or inflate the campaign's numbers.
+        return SENT
+
+    _mark_sent(campaign_doc, enrollment)
+    return SENT
+
+
+def _send_freeform(campaign_doc, enrollment, step, contact, account, is_test=False):
+    """Plain text inside the 24h window: free to send, and no template approval.
+
+    It still goes through `WhatsApp Message` rather than straight to MSG91, so
+    the nudge appears in the CRM conversation and lands in the event log. A send
+    that bypassed the record would be invisible to both.
+    """
+    body = render(step.message_text, contact)
+    if not body:
+        return SKIPPED
+
+    reference_doctype, reference_name = _reference_for(enrollment)
+    if not reference_name:
+        # Free-form needs no lead to personalise from, which is the whole point:
+        # it reaches people who only ever existed as a phone number. The message
+        # still wants something to hang off, so point it at the funnel contact.
+        reference_doctype, reference_name = contacts.DOCTYPE, contact.name
+
+    message = frappe.new_doc("WhatsApp Message")
+    message.update(
+        {
+            "reference_doctype": reference_doctype,
+            "reference_name": reference_name,
+            "message_type": "Manual",
+            "content_type": "text",
+            "message": body,
+            "to": enrollment.phone,
+        }
+    )
+
+    if not _insert_send(message, campaign_doc, account, enrollment):
+        return SKIPPED
+
+    if is_test:
+        # A test must not move the journey or inflate the campaign's numbers.
+        return SENT
+
+    _mark_sent(campaign_doc, enrollment)
+    return SENT
+
+
+def _insert_send(message, campaign_doc, account, enrollment):
+    """Inserting is what sends, so the number and campaign tag go on first.
+
+    A refusal must not stall the journey behind it. The window can shut between
+    the check and the send, and a template can be rejected long after it was
+    approved; in both cases the right answer is to log it and let the next step
+    have its turn.
+    """
     previous_account = frappe.flags.get("msg91_whatsapp_account")
     previous_campaign = frappe.flags.get("msg91_campaign")
-    frappe.flags.msg91_whatsapp_account = campaign_doc.whatsapp_account
+    frappe.flags.msg91_whatsapp_account = account
     frappe.flags.msg91_campaign = campaign_doc.name
     try:
         message.insert(ignore_permissions=True)
+        return True
+    except Exception:
+        frappe.log_error(
+            frappe.get_traceback(),
+            f"MSG91: send failed for {enrollment.get('name') or 'test send'}",
+        )
+        return False
     finally:
         frappe.flags.msg91_whatsapp_account = previous_account
         frappe.flags.msg91_campaign = previous_campaign
 
-    if is_test:
-        # A test must not move the journey or inflate the campaign's numbers.
-        return True
 
+def _mark_sent(campaign_doc, enrollment):
     enrollment.status = "Active"
     enrollment.nudges_sent = cint(enrollment.nudges_sent) + 1
     enrollment.last_sent_at = now_datetime()
     _bump(campaign_doc.name, "sent_count")
-    return True
+    _note_nudge(enrollment)
+
+
+def _note_nudge(enrollment):
+    """Count the nudge on the contact, not just on the enrollment.
+
+    `nudge_count` is offered as a rule fact but nothing populated it, because
+    until campaigns could send there was nothing in the app that nudged. It is
+    written last, after the send has already rippled through the event log and
+    re-scored the contact, so it is not overwritten by that pass.
+    """
+    contact = enrollment.get("contact")
+    if not contact:
+        return
+
+    current = cint(frappe.db.get_value(contacts.DOCTYPE, contact, "nudge_count"))
+    frappe.db.set_value(
+        contacts.DOCTYPE,
+        contact,
+        {"nudge_count": current + 1, "last_nudge_at": now_datetime()},
+        update_modified=False,
+    )
+
+
+def render(text, contact):
+    """Free-form personalisation, deliberately limited to one placeholder.
+
+    Anything richer would need the CRM Lead, and the contacts this is for are
+    exactly the ones who may not have a lead record.
+    """
+    if not text:
+        return ""
+    return text.replace("{name}", _first_name(contact))
+
+
+def _first_name(contact):
+    name = (contact.get("profile_name") or "").strip()
+    if not name and contact.get("lead"):
+        name = frappe.db.get_value("CRM Lead", contact.lead, "first_name") or ""
+    return name.split(" ")[0] if name else "there"
 
 
 def _reference_for(enrollment):

@@ -17,6 +17,7 @@
   "outreach_template",
   "audience_section",
   "enroll_mode",
+  "enroll_on_state",
   "audience_filter",
   "schedule_section",
   "start_on",
@@ -29,6 +30,7 @@
   "journey_html",
   "steps",
   "exit_section",
+  "exit_on_advance",
   "exit_states",
   "metrics_section",
   "enrolled_count",
@@ -88,12 +90,11 @@
    "label": "First Touch"
   },
   {
-   "description": "Sent the moment a lead is enrolled. Template parameters are filled from the CRM Lead using the template's Field Names.",
+   "description": "Sent the moment someone is enrolled. Leave empty to start the sequence silently \u2014 use that when the first message went out elsewhere (an MSG91 blast) and this campaign only runs the follow-up.",
    "fieldname": "outreach_template",
    "fieldtype": "Link",
    "label": "Outreach Template",
-   "options": "WhatsApp Templates",
-   "reqd": 1
+   "options": "WhatsApp Templates"
   },
   {
    "fieldname": "audience_section",
@@ -102,11 +103,11 @@
   },
   {
    "default": "Manual",
-   "description": "Manual means you enroll leads yourself. Saved Filter enrolls every CRM Lead matching the filter below, once, when the campaign starts.",
+   "description": "Manual: you add leads by hand. Saved Filter: everyone matching the filter, once, at Start. On Entering State: anyone who reaches the state below, automatically and continuously.",
    "fieldname": "enroll_mode",
    "fieldtype": "Select",
    "label": "Enroll Mode",
-   "options": "Manual\nSaved Filter"
+   "options": "Manual\nSaved Filter\nOn Entering State"
   },
   {
    "depends_on": "eval:doc.enroll_mode=='Saved Filter'",
@@ -221,6 +222,22 @@
    "fieldtype": "Int",
    "label": "Exited",
    "read_only": 1
+  },
+  {
+   "depends_on": "eval:doc.enroll_mode=='On Entering State'",
+   "description": "The moment a rule moves someone into this state, they are enrolled and their first wait begins. Enrolment is one per person per campaign.",
+   "fieldname": "enroll_on_state",
+   "fieldtype": "Link",
+   "label": "Enroll When State Becomes",
+   "mandatory_depends_on": "eval:doc.enroll_mode=='On Entering State'",
+   "options": "WhatsApp Lead State"
+  },
+  {
+   "default": "1",
+   "description": "Drop anyone whose state ranks above the one that enrolled them, so a person only ever hears the nudge written for the level they are at.",
+   "fieldname": "exit_on_advance",
+   "fieldtype": "Check",
+   "label": "Exit When They Reach A Deeper Level"
   }
  ],
  "index_web_pages_for_search": 1,

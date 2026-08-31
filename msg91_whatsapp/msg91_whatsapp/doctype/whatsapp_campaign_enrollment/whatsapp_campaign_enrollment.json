@@ -17,6 +17,7 @@
   "current_step",
   "next_action_at",
   "entered_at",
+  "entry_state",
   "column_break_journey",
   "nudges_sent",
   "last_sent_at",
@@ -161,6 +162,14 @@
    "fieldname": "clicked_in_campaign",
    "fieldtype": "Check",
    "label": "Clicked",
+   "read_only": 1
+  },
+  {
+   "description": "The level they were at when they were enrolled. Used to tell when they have moved deeper and should stop hearing this campaign's nudges.",
+   "fieldname": "entry_state",
+   "fieldtype": "Link",
+   "label": "State On Entry",
+   "options": "WhatsApp Lead State",
    "read_only": 1
   }
  ],

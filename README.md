@@ -70,6 +70,8 @@ Condition facts available: `message_text`, `template_name`, `current_state`,
 `days_since_inbound`, `days_since_outbound`, `days_since_read`,
 `days_since_clicked`, `replied`, `opted_out`, `session_open`.
 
+`nudge_count` counts campaign messages sent to that contact, across campaigns.
+
 For keyword matching use the `in` operator with a comma-separated list; it
 matches if any entry appears anywhere in the text, case-insensitively.
 
@@ -84,13 +86,60 @@ The division of labour:
 - The **campaign** decides who gets messaged and when.
 - The **state engine** decides how interested they are.
 
-A campaign has a first-touch template, sent on enrolment, then a list of steps.
-Each step waits N hours after the previous one, then sends its template unless
-its condition says otherwise (`If Not Replied`, `If Not Read`, `If Not Clicked`,
-or `Always`), optionally gated on the contact's global score.
+A campaign has an optional first-touch template, sent on enrolment, then a list
+of steps. Each step waits a set time after the previous one — in hours for a real
+sequence, or minutes to rehearse one end to end — then sends unless its
+condition says otherwise (`If Not Replied`, `If Not Read`, `If Not Clicked`, or
+`Always`), optionally gated on the contact's global score.
 
-Every campaign message is an approved template. Free-form nudges would fail on
-day three of a sequence, when the 24h window has long closed.
+### Template or free form
+
+Each step chooses how it sends:
+
+- **Template** — an approved template. Lands whether or not the 24h window is
+  open, and is billed. Personalised from the CRM Lead, so it needs one.
+- **Free Form** — plain text. Free, no template approval, and it reaches people
+  who have no CRM Lead at all, because there is nothing to personalise from.
+  Only legal while the window is open.
+
+The window opens when the **customer** messages you, not when you message them,
+and runs 24h from their last message. So a free-form step only works on someone
+who replied, and only for as long as that reply is fresh. Steps in the first few
+hours after a reply are safe; past 24h they cannot land, and the campaign form
+says so on save.
+
+`If The Window Has Closed` decides what a free-form step does when it comes due
+and the window has shut: skip it, send a template instead, or drop them from the
+campaign. A fallback template is best-effort — if the contact has no CRM Lead it
+is skipped rather than ending the journey, because a later step may still land
+if they write back.
+
+`{name}` in free-form text is replaced with their WhatsApp profile name, or the
+CRM Lead's first name, or "there".
+
+### Who gets enrolled
+
+Three ways, set by `Enroll Mode`:
+
+- **Manual** — you add leads by hand.
+- **Saved Filter** — everyone matching a CRM Lead filter, collected **once**, at
+  Start. It never looks again.
+- **On Entering State** — anyone who reaches a chosen state, automatically and
+  continuously, the moment a rule puts them there. This is what makes a campaign
+  react to behaviour instead of to a list.
+
+Auto-enrolment fires on *entering* the state, so people already sitting in it
+when the campaign starts are not swept up. That is usually right — their window
+shut long ago — but `Enrol Everyone Already At This Level` under Audience will
+back-fill them.
+
+Leaving **Outreach Template** empty enrols people silently: no opening message,
+the first wait just begins. Use that when the outreach went out somewhere else
+(an MSG91 dashboard blast) and this campaign only runs the follow-up.
+
+`Exit When They Reach A Deeper Level` drops anyone whose state now ranks above
+the one that enrolled them, so a person only ever hears the nudge written for
+where they actually are.
 
 ### States are global, journeys are not
 
@@ -127,6 +176,18 @@ enrolled in two live campaigns will hear from both, and neither knows about the
 other. With one campaign running this is a non-issue. Use campaign **Priority**
 if it ever becomes one.
 
+Nothing off WhatsApp reaches the funnel. A click on your own website, a checkout
+started and abandoned, a purchase — none of it is a signal here. Only what
+happens in the conversation.
+
+The runner sends up to 200 messages per campaign per 15-minute tick. Enrolment
+is immediate regardless, so a burst is absorbed as a queue rather than lost.
+
+Because the runner is a 15-minute poll, a wait is a floor and not an alarm: a
+2-hour step lands at the first tick at or after the 2-hour mark. That is
+invisible on an hours-long sequence and very visible on a minutes-long test of
+one, which is what **Run Due Nudges Now** on an active campaign is for.
+
 ## Setup
 
 1. **MSG91 Settings**: auth key, integrated number (digits with country code,
@@ -145,6 +206,9 @@ if it ever becomes one.
    then press *Start Campaign*. Until a campaign is started, the app records
    signals and scores contacts but sends nothing on its own.
 
+To test a free-form step, message the business number from the test handset
+first — otherwise its window is shut and there is nothing to send into.
+
 ## MSG91 endpoints
 
 Two paths, split by content type and not by recipient count:
@@ -160,6 +224,7 @@ the single `request_id` in the response can no longer be tied to one recipient.
 
 ## Roadmap
 
+- Signals from outside WhatsApp, so a website visit can move someone a level.
 - Intent detection beyond keywords.
 - A panel inside the CRM frontend, so sales users are not in the desk UI.
 

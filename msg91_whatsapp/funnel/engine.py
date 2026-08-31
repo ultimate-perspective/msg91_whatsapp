@@ -11,7 +11,7 @@ import json
 import frappe
 from frappe.utils import cint, now_datetime, time_diff_in_hours
 
-from msg91_whatsapp.funnel import conditions
+from msg91_whatsapp.funnel import campaigns, conditions
 from msg91_whatsapp.msg91_whatsapp.doctype.whatsapp_lead_rule.whatsapp_lead_rule import (
     active_rules,
 )
@@ -44,6 +44,9 @@ def evaluate(contact, save=True):
         if changed:
             mirror_to_lead(contact)
             hand_off(contact)
+            # Enrol before returning, so the wait starts from the customer's own
+            # action rather than from whenever the next sweep happens to run.
+            campaigns.enroll_on_state(contact)
 
     return {"score": score, "state": state, "changed": changed, "breakdown": breakdown}
 

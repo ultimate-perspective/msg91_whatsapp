@@ -11,6 +11,21 @@ frappe.ui.form.on("WhatsApp Campaign", {
 
         if (frm.doc.status === "Active") {
             frm.add_custom_button(__("Pause"), () => run(frm, "pause"));
+            frm.add_custom_button(__("Run Due Nudges Now"), () => {
+                frappe.call({
+                    doc: frm.doc,
+                    method: "run_now",
+                    freeze: true,
+                    freeze_message: __("Running ..."),
+                    callback: () => {
+                        frappe.show_alert({
+                            message: __("Runner finished. Check Enrollments."),
+                            indicator: "green",
+                        });
+                        frm.reload_doc();
+                    },
+                });
+            });
         }
 
         if (frm.doc.status === "Paused") {
@@ -25,6 +40,14 @@ frappe.ui.form.on("WhatsApp Campaign", {
             frm.add_custom_button(__("Preview Audience"), () => preview(frm), __("Audience"));
         }
 
+        if (frm.doc.enroll_mode === "On Entering State") {
+            frm.add_custom_button(
+                __("Enrol Everyone Already At This Level"),
+                () => backfill(frm),
+                __("Audience")
+            );
+        }
+
         frm.add_custom_button(__("View Enrollments"), () => {
             frappe.set_route("List", "WhatsApp Campaign Enrollment", { campaign: frm.doc.name });
         });
@@ -34,12 +57,33 @@ frappe.ui.form.on("WhatsApp Campaign", {
 frappe.ui.form.on("WhatsApp Campaign Step", {
     steps_add: render_timeline,
     steps_remove: render_timeline,
-    delay_hours: render_timeline,
+    delay: render_timeline,
+    delay_unit: render_timeline,
     step_name: render_timeline,
     template: render_timeline,
+    message_type: render_timeline,
+    message_text: render_timeline,
     send_if: render_timeline,
     enabled: render_timeline,
 });
+
+// A free-form step is free but only lands inside the 24h window, so the
+// timeline says which steps are betting on that window still being open.
+function delay_in_hours(step) {
+    const value = step.delay || 0;
+    return step.delay_unit === "Minutes" ? value / 60 : value;
+}
+
+function what_it_sends(step) {
+    if (step.message_type === "Free Form") {
+        const text = (step.message_text || "").trim();
+        const preview = text.length > 60 ? text.slice(0, 60) + "..." : text || "-";
+        return `<span class="text-muted">${__("free form")}</span> ${frappe.utils.escape_html(
+            preview
+        )}`;
+    }
+    return frappe.utils.escape_html(step.template || "-");
+}
 
 function render_timeline(frm) {
     const wrapper = frm.get_field("journey_html");
@@ -63,16 +107,23 @@ function render_timeline(frm) {
     let offset = 0;
     const rows = steps
         .map((step, i) => {
-            offset += step.delay_hours || 0;
+            offset += delay_in_hours(step);
             const when =
-                offset < 48
-                    ? __("{0}h after enrolment", [offset])
+                offset < 1
+                    ? __("{0} min after enrolment", [+(offset * 60).toFixed(0)])
+                    : offset < 48
+                    ? __("{0}h after enrolment", [+offset.toFixed(2)])
                     : __("day {0}", [+(offset / 24).toFixed(1)]);
+            const cost =
+                step.message_type === "Free Form"
+                    ? `<span class="text-success">${__("free")}</span>`
+                    : `<span class="text-muted">${__("billed")}</span>`;
             return `<tr>
                 <td>${frappe.utils.escape_html(step.step_name || __("Step {0}", [i + 1]))}</td>
                 <td class="text-muted">${when}</td>
-                <td>${frappe.utils.escape_html(step.template || "-")}</td>
+                <td>${what_it_sends(step)}</td>
                 <td class="text-muted">${frappe.utils.escape_html(step.send_if || "Always")}</td>
+                <td>${cost}</td>
             </tr>`;
         })
         .join("");
@@ -82,14 +133,21 @@ function render_timeline(frm) {
         <table class="table table-bordered" style="margin-bottom: 10px">
             <thead><tr>
                 <th>${__("Step")}</th><th>${__("Lands")}</th>
-                <th>${__("Template")}</th><th>${__("Only if")}</th>
+                <th>${__("Sends")}</th><th>${__("Only if")}</th><th>${__("Cost")}</th>
             </tr></thead>
             <tbody>
                 <tr>
                     <td><b>${__("First touch")}</b></td>
-                    <td class="text-muted">${__("immediately")}</td>
-                    <td>${frappe.utils.escape_html(frm.doc.outreach_template || "-")}</td>
+                    <td class="text-muted">${
+                        frm.doc.outreach_template ? __("immediately") : __("nothing sent")
+                    }</td>
+                    <td>${
+                        frm.doc.outreach_template
+                            ? frappe.utils.escape_html(frm.doc.outreach_template)
+                            : `<span class="text-muted">${__("silent enrolment")}</span>`
+                    }</td>
                     <td class="text-muted">-</td>
+                    <td class="text-muted">${frm.doc.outreach_template ? __("billed") : "-"}</td>
                 </tr>
                 ${rows}
             </tbody>
@@ -215,6 +273,30 @@ function enrol_lead(frm) {
         },
     });
     dialog.show();
+}
+
+function backfill(frm) {
+    frappe.confirm(
+        __(
+            "Auto-enrolment only catches people as they enter the state. This adds everyone sitting there right now. Their 24h window has probably closed, so free-form nudges will be skipped for most of them. Continue?"
+        ),
+        () => {
+            frappe.call({
+                doc: frm.doc,
+                method: "enroll_current_state",
+                freeze: true,
+                freeze_message: __("Enrolling ..."),
+                callback: (r) => {
+                    frappe.msgprint({
+                        title: __("Enrolled"),
+                        indicator: "green",
+                        message: __("{0} added.", [r.message || 0]),
+                    });
+                    frm.reload_doc();
+                },
+            });
+        }
+    );
 }
 
 function preview(frm) {
