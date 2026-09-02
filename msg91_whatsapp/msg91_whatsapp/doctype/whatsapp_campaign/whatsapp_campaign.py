@@ -6,6 +6,7 @@ only reason it is safe to keep the runner on a schedule.
 
 import frappe
 from frappe.model.document import Document
+from frappe.utils import now_datetime
 
 from msg91_whatsapp.funnel import campaigns
 
@@ -116,12 +117,16 @@ class WhatsAppCampaign(Document):
         if self.enroll_mode == "On Entering State":
             frappe.msgprint(
                 f"Anyone who reaches <b>{self.enroll_on_state}</b> from now on will be "
-                "enrolled automatically. People already sitting in that state are not "
-                "swept up; enrolment happens when they enter it.",
+                "enrolled automatically, as long as they message you after this moment. "
+                "People already sitting in that state, and anyone whose last message "
+                "predates now, are left alone.",
                 indicator="blue",
                 title="Enrolment is live",
             )
 
+        # The cutoff for auto-enrolment: anyone whose last message predates this
+        # is history, not a new lead.
+        self.db_set("activated_at", now_datetime(), update_modified=False)
         self.db_set("status", "Active", update_modified=False)
 
         enrolled = campaigns.enroll_audience(self.name) if self.enroll_mode == "Saved Filter" else 0

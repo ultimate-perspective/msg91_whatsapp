@@ -129,9 +129,15 @@ Three ways, set by `Enroll Mode`:
   react to behaviour instead of to a list.
 
 Auto-enrolment fires on *entering* the state, so people already sitting in it
-when the campaign starts are not swept up. That is usually right — their window
-shut long ago — but `Enrol Everyone Already At This Level` under Audience will
-back-fill them.
+when the campaign starts are not swept up. Nor is anyone whose last message to
+you predates **Started At**, stamped when the campaign is started: score is
+replayed from the whole event log and the sweep re-evaluates everybody, so
+correcting a rule moves contacts who have been quiet for months, and a campaign
+switched on without that cutoff would enrol its entire back catalogue on the
+strength of something somebody tapped in March.
+
+`Enrol Everyone Already At This Level` under Audience deliberately ignores the
+cutoff, for when back-filling is what you actually want.
 
 Leaving **Outreach Template** empty enrols people silently: no opening message,
 the first wait just begins. Use that when the outreach went out somewhere else

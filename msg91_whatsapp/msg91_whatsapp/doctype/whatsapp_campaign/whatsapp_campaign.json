@@ -20,6 +20,7 @@
   "enroll_on_state",
   "audience_filter",
   "schedule_section",
+  "activated_at",
   "start_on",
   "end_on",
   "column_break_schedule",
@@ -238,6 +239,13 @@
    "fieldname": "exit_on_advance",
    "fieldtype": "Check",
    "label": "Exit When They Reach A Deeper Level"
+  },
+  {
+   "description": "Set by Start Campaign. Auto-enrolment ignores anyone whose last message to you predates this, so switching a campaign on never nudges the back catalogue.",
+   "fieldname": "activated_at",
+   "fieldtype": "Datetime",
+   "label": "Started At",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,

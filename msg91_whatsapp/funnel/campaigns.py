@@ -110,27 +110,53 @@ def enroll_on_state(contact):
     if not contact.state or contact.opted_out:
         return []
 
-    campaigns = frappe.get_all(
+    rows = frappe.get_all(
         "WhatsApp Campaign",
         filters={
             "status": "Active",
             "enroll_mode": "On Entering State",
             "enroll_on_state": contact.state,
         },
+        fields=["name", "activated_at"],
         order_by="priority asc",
-        pluck="name",
     )
 
     enrolled = []
-    for campaign in campaigns:
+    for row in rows:
+        if not acted_since(contact, row.activated_at):
+            continue
         try:
-            if enroll(campaign, phone=contact.phone):
-                enrolled.append(campaign)
+            if enroll(row.name, phone=contact.phone):
+                enrolled.append(row.name)
         except Exception:
             frappe.log_error(
-                frappe.get_traceback(), f"MSG91: auto-enrol failed for {campaign}"
+                frappe.get_traceback(), f"MSG91: auto-enrol failed for {row.name}"
             )
     return enrolled
+
+
+def acted_since(contact, activated_at):
+    """Did this contact act after the campaign was switched on?
+
+    Score is replayed from the whole event log on every evaluation, and the
+    hourly sweep re-evaluates everybody. So correcting a rule moves contacts who
+    have been sitting quietly for months, and without this a campaign's first
+    minute would enrol its entire back catalogue on the strength of something
+    somebody tapped in March.
+
+    The test is their last inbound message, because that is what a state change
+    means here and it is also what opens the window a free-form nudge needs.
+    """
+    if not activated_at:
+        return True
+
+    last_inbound = contact.get("last_inbound_at")
+    if not last_inbound:
+        # They have never written to us, so there is no window and nothing that
+        # could have just happened.
+        return False
+
+    return get_datetime(last_inbound) >= get_datetime(activated_at)
 
 
 def enroll_current_state(campaign):
@@ -139,7 +165,8 @@ def enroll_current_state(campaign):
     Auto-enrolment fires on entering a state, so people who were already there
     when the campaign started are not swept up. Usually that is what you want —
     their 24h window shut long ago and a free-form nudge would be skipped — so
-    this is a button rather than something Start does on its own.
+    this is a button rather than something Start does on its own. It is also the
+    one path that ignores the Started At cutoff, which is the whole point of it.
     """
     campaign_doc = frappe.get_cached_doc("WhatsApp Campaign", campaign)
     if not campaign_doc.enroll_on_state:
