@@ -745,14 +745,22 @@ def render(text, contact):
     """
     if not text:
         return ""
-    return text.replace("{name}", _first_name(contact))
+    return text.replace("{name}", _display_name(contact))
 
 
-def _first_name(contact):
-    name = (contact.get("profile_name") or "").strip()
-    if not name and contact.get("lead"):
-        name = frappe.db.get_value("CRM Lead", contact.lead, "first_name") or ""
-    return name.split(" ")[0] if name else "there"
+def _display_name(contact):
+    """What to call them.
+
+    The CRM's first name is already a first name, so it is used whole. A WhatsApp
+    profile name is not: these contacts are shops, and clipping "The Toy House"
+    to its first word greets someone as "The". So it is used whole too.
+    """
+    if contact.get("lead"):
+        first = (frappe.db.get_value("CRM Lead", contact.lead, "first_name") or "").strip()
+        if first:
+            return first
+
+    return (contact.get("profile_name") or "").strip() or "there"
 
 
 def _reference_for(enrollment):
