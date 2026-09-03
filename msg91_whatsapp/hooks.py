@@ -31,10 +31,11 @@ doc_events = {
 # the whole book gets re-scored on a sweep. Hourly is plenty for a funnel whose
 # fastest rule is measured in days.
 scheduler_events = {
-    # Nudges are checked often enough that a "wait 2 hours" step means roughly
-    # two hours. Nothing is sent unless a campaign is Active and a step is due.
+    # The poll is the granularity of every wait, so it caps how precise a short
+    # step can be. One indexed query per active campaign is cheap enough that
+    # five minutes is worth it, and it makes a sequence testable in minutes.
     "cron": {
-        "*/15 * * * *": [
+        "*/5 * * * *": [
             "msg91_whatsapp.funnel.campaigns.run",
         ]
     },

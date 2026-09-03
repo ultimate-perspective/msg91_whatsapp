@@ -186,13 +186,17 @@ Nothing off WhatsApp reaches the funnel. A click on your own website, a checkout
 started and abandoned, a purchase — none of it is a signal here. Only what
 happens in the conversation.
 
-The runner sends up to 200 messages per campaign per 15-minute tick. Enrolment
-is immediate regardless, so a burst is absorbed as a queue rather than lost.
+The runner sends up to 200 messages per campaign per 5-minute tick. Enrolment is
+immediate regardless, so a burst is absorbed as a queue rather than lost.
 
-Because the runner is a 15-minute poll, a wait is a floor and not an alarm: a
-2-hour step lands at the first tick at or after the 2-hour mark. That is
-invisible on an hours-long sequence and very visible on a minutes-long test of
-one, which is what **Run Due Nudges Now** on an active campaign is for.
+Because the runner is a poll, a wait is a floor and not an alarm: a 2-hour step
+lands at the first tick at or after the 2-hour mark. That is invisible on an
+hours-long sequence and very visible on a minutes-long test of one, which is
+what **Run Due Nudges Now** on an active campaign is for.
+
+A campaign with no first touch starts its first wait at enrolment rather than at
+the tick that follows it, so the clock runs from what the customer did and not
+from when we got round to looking.
 
 ## Setup
 

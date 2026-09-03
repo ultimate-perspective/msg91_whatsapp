@@ -73,6 +73,7 @@ def enroll(campaign, lead=None, phone=None):
             "next_action_at": _start_time(campaign_doc),
         }
     )
+    _open_silently(enrollment, campaign_doc)
     enrollment.insert(ignore_permissions=True)
 
     frappe.db.set_value(
@@ -97,6 +98,27 @@ def enroll_audience(campaign):
         if enroll(campaign, lead=lead):
             enrolled += 1
     return enrolled
+
+
+def _open_silently(enrollment, campaign_doc):
+    """Start the first wait at enrolment when there is no first touch to send.
+
+    Otherwise the runner spends an entire tick doing nothing but turning Queued
+    into Waiting, and the wait ends up measured from when we noticed rather than
+    from what the customer did: a four-minute step landing twenty minutes after
+    the tap that earned it.
+    """
+    if campaign_doc.outreach_template:
+        return
+
+    steps = [step for step in campaign_doc.steps if step.enabled]
+    if not steps:
+        return
+
+    due = add_to_date(_start_time(campaign_doc), hours=delay_in_hours(steps[0]))
+    enrollment.status = "Waiting"
+    enrollment.current_step = 0
+    enrollment.next_action_at = clamp_to_window(due, campaign_doc)
 
 
 def enroll_on_state(contact):
